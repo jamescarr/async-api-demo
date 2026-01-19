@@ -1,12 +1,7 @@
 info:
   title: Order Producer Service
   version: 1.0.0
-  description: "\n## Order Producer Service\n\nThis service generates order events\
-    \ and publishes them to Kafka.\nIt simulates an e-commerce order intake system.\n\
-    \n### Events Published\n\n- **OrderCreated**: Emitted when a new order is placed\n\
-    \n### Architecture\n\n```\n[Order Producer] --> [orders.created topic] --> [Order\
-    \ Consumer]\n                                             |\n                \
-    \                             --> [Redpanda Connect] --> [SQS]\n```\n"
+  description: "Foo"
 asyncapi: 3.0.0
 defaultContentType: application/json
 servers:
@@ -23,7 +18,7 @@ channels:
     - $ref: '#/servers/development'
     messages:
       Message:
-        $ref: '#/components/messages/Order Created Publisher:Message'
+        $ref: '#/components/messages/OrderCreated Publisher:Message'
     bindings:
       kafka:
         topic: orders.created

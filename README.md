@@ -40,17 +40,21 @@ A demonstration of event-driven architecture using AsyncAPI specifications, Fast
 ## Quick Start
 
 ```bash
+# Install just (command runner)
+# macOS: brew install just
+# Linux: cargo install just
+
 # Start all services
-make up
+just up
 
 # View logs
-make logs
+just logs
 
 # Stop all services
-make down
+just down
 
-# View AsyncAPI documentation
-make docs
+# See all available commands
+just
 ```
 
 ## Topics
@@ -81,22 +85,19 @@ Schemas are defined in the `schemas/` directory:
 
 ## AsyncAPI Specifications
 
-AsyncAPI documents are in the `docs/` directory:
-
-- `asyncapi-producer.yaml` - Order Producer service API (hand-written)
-- `asyncapi-consumer.yaml` - Order Fulfillment service API (hand-written)
+AsyncAPI documents are in the `docs/` directory and are auto-generated from code.
 
 ### Generate Specs from Code
 
-FastStream can auto-generate AsyncAPI specs directly from your Python code:
+FastStream auto-generates AsyncAPI specs from your Python code:
 
 ```bash
-# Generate specs from code
-make generate-specs
+# Generate all specs
+just generate-specs
 
 # Or individually
-cd producer && uv run python -m app.asyncapi -o ../docs/generated-producer.yaml
-cd consumer && uv run python -m app.asyncapi -o ../docs/generated-consumer.yaml
+just generate-producer-spec
+just generate-consumer-spec
 ```
 
 This reads the `@broker.subscriber()` and `broker.publisher()` decorators along with 
@@ -109,11 +110,14 @@ Pydantic models to build the spec automatically.
 npm install -g @asyncapi/cli
 
 # Interactive studio
-make studio-producer
-make studio-consumer
+just studio-producer
+just studio-consumer
 
 # Generate HTML docs
-make docs-html
+just docs-html
+
+# Validate specs
+just validate
 ```
 
 ## Viewing Messages
@@ -125,36 +129,66 @@ Open http://localhost:8080 to see:
 - Consumer groups
 - Schema Registry
 
+### Redpanda CLI
+
+```bash
+# List topics
+just topics
+
+# Consume from a topic
+just consume orders.created
+
+# View consumer groups
+just groups
+```
+
 ### SQS (LocalStack)
 
 ```bash
 # List queues
-aws --endpoint-url=http://localhost:4566 sqs list-queues
+just sqs-queues
 
-# Receive messages from fulfillment queue
-aws --endpoint-url=http://localhost:4566 sqs receive-message \
-  --queue-url http://localhost:4566/000000000000/order-fulfillment-events \
-  --max-number-of-messages 10
+# Receive messages
+just sqs-messages
 ```
 
 ## Development
+
+### CLI Commands
+
+Each service has a click-based CLI:
+
+```bash
+# Producer
+cd producer && uv run producer --help
+cd producer && uv run producer run          # Run the service
+cd producer && uv run producer asyncapi     # Generate AsyncAPI spec
+
+# Consumer  
+cd consumer && uv run consumer --help
+cd consumer && uv run consumer run          # Run the service
+cd consumer && uv run consumer asyncapi     # Generate AsyncAPI spec
+```
 
 ### Project Structure
 
 ```
 asyncapi-demo/
+├── justfile                # Command runner
 ├── docker-compose.yml      # Infrastructure
 ├── producer/               # Order Producer service
 │   ├── app/
 │   │   ├── main.py        # FastStream app
 │   │   ├── models.py      # Pydantic models
-│   │   └── generator.py   # Random order generator
+│   │   ├── generator.py   # Random order generator
+│   │   └── cli.py         # Click CLI
 │   ├── Dockerfile
 │   └── pyproject.toml     # uv dependencies
 ├── consumer/               # Order Fulfillment service
 │   ├── app/
 │   │   ├── main.py        # FastStream app
-│   │   └── models.py      # Pydantic models
+│   │   ├── models.py      # Pydantic models
+│   │   └── cli.py         # Click CLI
 │   ├── Dockerfile
 │   └── pyproject.toml     # uv dependencies
 ├── connect/                # Redpanda Connect
@@ -164,7 +198,7 @@ asyncapi-demo/
 │   ├── order_accepted.avsc
 │   ├── order_shipped.avsc
 │   └── order_delivered.avsc
-├── docs/                   # AsyncAPI specs
+├── docs/                   # AsyncAPI specs (generated)
 │   ├── asyncapi-producer.yaml
 │   └── asyncapi-consumer.yaml
 └── localstack/            # LocalStack init scripts
@@ -175,14 +209,18 @@ asyncapi-demo/
 
 ```bash
 # Rebuild all services
-make build
+just build
 
-# Rebuild specific service
-docker compose build producer
-docker compose build consumer
+# Rebuild and restart
+just rebuild
+```
+
+### Health Check
+
+```bash
+just health
 ```
 
 ## License
 
 MIT
-

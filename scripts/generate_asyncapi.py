@@ -149,26 +149,28 @@ def generate_producer_spec(
     Args:
         schemas_dir: Path to the schemas directory
         registry_url: Schema Registry URL for references
-        inline: If True, fetch and inline the schema from registry
+        inline: If True, fetch and inline the schema from registry.
+                If False, use $ref to registry (use `asyncapi bundle` to resolve)
     """
-    # Load schema - from registry if inline mode, otherwise local file
-    if inline:
-        order_created = fetch_schema_from_registry(registry_url, "orders.created-value")
-        if not order_created:
-            print("Falling back to local schema file", file=sys.stderr)
-            order_created = load_avro_schema(schemas_dir / "order_created.avsc")
-    else:
-        order_created = load_avro_schema(schemas_dir / "order_created.avsc")
-
+    # Load schema for doc extraction
+    order_created = load_avro_schema(schemas_dir / "order_created.avsc")
+    
     # Build payload - either inline the Avro schema or reference the registry
     if inline:
-        # Inline the full Avro schema in the spec
+        # Fetch from registry and inline
+        fetched_schema = fetch_schema_from_registry(registry_url, "orders.created-value")
+        if fetched_schema:
+            order_created = fetched_schema
+        else:
+            print("Warning: Could not fetch from registry, using local file", file=sys.stderr)
+        
         payload = {
             "schemaFormat": "application/vnd.apache.avro+json;version=1.9.0",
             "schema": order_created,
         }
     else:
-        # Reference the schema registry URL
+        # Reference the schema registry URL directly
+        # Use `asyncapi bundle` to resolve $ref if needed
         payload = {
             "schemaFormat": "application/vnd.apache.avro+json;version=1.9.0",
             "schema": {

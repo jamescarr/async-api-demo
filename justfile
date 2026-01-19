@@ -133,25 +133,27 @@ register-all-schemas:
     just register-schema orders.delivered-value order_delivered.avsc
     @echo "✓ All schemas registered"
 
-# Schema Registry URL (use localhost for fetching schemas)
+# Schema Registry URL
 registry_url := "http://localhost:18081"
 
-# Generate AsyncAPI specs with inlined Avro schemas (fetched from registry)
+# Generate AsyncAPI specs with $ref to Schema Registry (recommended)
+# Use `just bundle` to resolve refs into a self-contained spec
 generate-specs:
-    @echo "Generating AsyncAPI specs from Avro schemas..."
-    @echo "  Fetching from Schema Registry: {{ registry_url }}"
+    @echo "Generating AsyncAPI specs with Schema Registry references..."
+    uv run --with pyyaml python scripts/generate_asyncapi.py producer --registry-url {{ registry_url }} > docs/asyncapi-producer.yaml
+    uv run --with pyyaml python scripts/generate_asyncapi.py consumer > docs/asyncapi-consumer.yaml
+    @echo "✓ Generated docs/asyncapi-producer.yaml (refs {{ registry_url }})"
+    @echo "✓ Generated docs/asyncapi-consumer.yaml (JSON Schema)"
+    @echo ""
+    @echo "Tip: Run 'just bundle' to resolve \$ref and create self-contained specs"
+
+# Generate AsyncAPI specs with inlined Avro schemas (for tools that don't resolve $ref)
+generate-specs-inline:
+    @echo "Generating AsyncAPI specs with inlined schemas..."
     uv run --with pyyaml python scripts/generate_asyncapi.py producer --registry-url {{ registry_url }} --inline > docs/asyncapi-producer.yaml
     uv run --with pyyaml python scripts/generate_asyncapi.py consumer > docs/asyncapi-consumer.yaml
     @echo "✓ Generated docs/asyncapi-producer.yaml (Avro schema inlined)"
     @echo "✓ Generated docs/asyncapi-consumer.yaml (JSON Schema)"
-
-# Generate AsyncAPI specs with $ref to Schema Registry (not inlined)
-generate-specs-ref:
-    @echo "Generating AsyncAPI specs with registry references..."
-    uv run --with pyyaml python scripts/generate_asyncapi.py producer --registry-url http://redpanda:8081 > docs/asyncapi-producer.yaml
-    uv run --with pyyaml python scripts/generate_asyncapi.py consumer > docs/asyncapi-consumer.yaml
-    @echo "✓ Generated docs/asyncapi-producer.yaml (refs http://redpanda:8081)"
-    @echo "✓ Generated docs/asyncapi-consumer.yaml"
 
 # List schemas in registry
 registry-schemas:
@@ -215,12 +217,13 @@ codegen-typescript:
     asyncapi generate models typescript docs/asyncapi-consumer.yaml -o generated/typescript/consumer
     @echo "✓ TypeScript types generated in generated/typescript/"
 
-# Bundle specs (resolve all $refs)
+# Bundle specs (resolve all $refs including Schema Registry URLs)
 bundle:
     mkdir -p docs/bundled
-    asyncapi bundle docs/asyncapi-producer.yaml -o docs/bundled/producer.yaml
-    asyncapi bundle docs/asyncapi-consumer.yaml -o docs/bundled/consumer.yaml
-    @echo "✓ Bundled specs in docs/bundled/"
+    @echo "Bundling specs (resolving Schema Registry \$ref)..."
+    asyncapi bundle docs/asyncapi-producer.yaml -o docs/bundled/asyncapi-producer.yaml
+    asyncapi bundle docs/asyncapi-consumer.yaml -o docs/bundled/asyncapi-consumer.yaml
+    @echo "✓ Bundled specs in docs/bundled/ (all \$ref resolved)"
 
 # ─────────────────────────────────────────────────────────────
 # Development

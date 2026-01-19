@@ -175,19 +175,33 @@ validate:
     asyncapi validate docs/asyncapi-consumer.yaml
     @echo "✓ All specs valid"
 
-# Open producer spec in AsyncAPI Studio
-studio-producer:
+# Open producer spec in AsyncAPI Studio (source with $ref)
+studio-producer-src:
     asyncapi start studio docs/asyncapi-producer.yaml
 
-# Open consumer spec in AsyncAPI Studio
-studio-consumer:
+# Open consumer spec in AsyncAPI Studio (source with $ref)
+studio-consumer-src:
     asyncapi start studio docs/asyncapi-consumer.yaml
+
+# Open bundled producer spec in AsyncAPI Studio (resolved, recommended)
+studio-producer:
+    @test -f docs/bundled/asyncapi-producer.yaml || (echo "Run 'just bundle' first" && exit 1)
+    asyncapi start studio docs/bundled/asyncapi-producer.yaml
+
+# Open bundled consumer spec in AsyncAPI Studio (resolved, recommended)
+studio-consumer:
+    @test -f docs/bundled/asyncapi-consumer.yaml || (echo "Run 'just bundle' first" && exit 1)
+    asyncapi start studio docs/bundled/asyncapi-consumer.yaml
 
 # Open both specs side-by-side (requires two terminals)
 studio:
     @echo "Run these in separate terminals:"
-    @echo "  just studio-producer"
+    @echo "  just studio-producer   # bundled/resolved specs"
     @echo "  just studio-consumer"
+    @echo ""
+    @echo "Or for source specs with \$ref:"
+    @echo "  just studio-producer-src"
+    @echo "  just studio-consumer-src"
 
 # Generate HTML documentation
 docs-html:
@@ -224,6 +238,12 @@ bundle:
     asyncapi bundle docs/asyncapi-producer.yaml -o docs/bundled/asyncapi-producer.yaml
     asyncapi bundle docs/asyncapi-consumer.yaml -o docs/bundled/asyncapi-consumer.yaml
     @echo "✓ Bundled specs in docs/bundled/ (all \$ref resolved)"
+
+# Generate specs AND bundle them (recommended workflow)
+specs: generate-specs bundle
+    @echo ""
+    @echo "✓ Specs generated and bundled!"
+    @echo "  Run 'just studio-producer' to view"
 
 # ─────────────────────────────────────────────────────────────
 # Development

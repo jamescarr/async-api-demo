@@ -2,210 +2,126 @@ asyncapi: 3.0.0
 info:
   title: Order Producer Service
   version: 1.0.0
-  description: |
-    ## Order Producer Service
+  description: '## Order Producer Service
+
 
     This service generates order events and publishes them to Kafka.
-    It simulates an e-commerce order intake system.
+
 
     ### Events Published
 
+
     - **OrderCreated**: Emitted when a new order is placed
 
-    ### Architecture
-
-    ```
-    [Order Producer] --> [orders.created topic] --> [Order Consumer]
-                                                 |
-                                                 --> [Redpanda Connect] --> [SQS]
-    ```
 
     ### Schema Registry
 
-    All events use Avro schemas registered in the Redpanda Schema Registry.
-    - Development: `http://localhost:18081`
-    - Internal: `http://redpanda:8081`
 
-    ### Avro Schemas
+    Events use Avro schemas registered in the Redpanda Schema Registry: `http://localhost:18081`
 
-    The canonical event definitions are in Avro format:
-    - `schemas/order_created.avsc` - OrderCreated event
-
-defaultContentType: application/json
-
+    '
+defaultContentType: application/vnd.apache.avro+json
 servers:
   development:
     host: localhost:19092
     protocol: kafka
-    description: Local Redpanda broker for development
-  production:
-    host: redpanda:9092
-    protocol: kafka
-    description: Internal Redpanda broker
-
+    description: Local Redpanda broker
 channels:
   orders.created:
     address: orders.created
     description: Topic for newly created order events
-    servers:
-      - $ref: '#/servers/development'
     messages:
       OrderCreated:
         $ref: '#/components/messages/OrderCreated'
-    bindings:
-      kafka:
-        topic: orders.created
-        partitions: 3
-        replicas: 1
-
 operations:
   publishOrderCreated:
     action: send
     channel:
       $ref: '#/channels/orders.created'
     summary: Publish a new order event
-    description: |
-      Publishes an OrderCreated event when a customer places a new order.
-      
-      **Avro Schema**: `schemas/order_created.avsc`
-      
-      The event is serialized using Avro and registered in the Schema Registry
-      under subject `orders.created-value`.
     messages:
-      - $ref: '#/channels/orders.created/messages/OrderCreated'
-
+    - $ref: '#/channels/orders.created/messages/OrderCreated'
 components:
   messages:
     OrderCreated:
       name: OrderCreated
       title: Order Created Event
-      summary: Event emitted when a new order is placed
-      description: |
-        This is the initiating event in the order fulfillment saga.
-        It triggers downstream processes like inventory reservation,
-        payment processing, and shipping preparation.
-        
-        **Avro Schema**: `schemas/order_created.avsc`
-        **Schema Registry Subject**: `orders.created-value`
-        **Namespace**: `com.example.orders.events`
-      contentType: application/json
+      summary: Event emitted when a new order is created by a customer
+      contentType: application/vnd.apache.avro+json
       payload:
-        $ref: '#/components/schemas/OrderCreated'
-      correlationId:
-        location: $message.header#/correlation_id
-      examples:
-        - name: Standard Order
-          summary: A typical e-commerce order
-          payload:
-            order_id: "ord_12345"
-            customer_id: "cust_67890"
-            customer_email: "customer@example.com"
-            items:
-              - product_id: "prod_001"
-                product_name: "Wireless Headphones"
-                quantity: 1
-                unit_price: "79.99"
-            total_amount: "79.99"
-            shipping_address:
-              street: "123 Main St"
-              city: "Austin"
-              state: "TX"
-              zip_code: "78701"
-              country: "USA"
-            created_at: "2026-01-19T12:00:00Z"
-            metadata:
-              source: "web"
-              campaign: "holiday_sale"
-
-  schemas:
-    # JSON Schema representation matching the Avro schema
-    # Canonical definition: schemas/order_created.avsc
-    OrderCreated:
-      type: object
-      description: |
-        Event emitted when a new order is created by a customer.
-        
-        **Avro Schema**: `schemas/order_created.avsc`
-        **Namespace**: `com.example.orders.events`
-      required:
-        - order_id
-        - customer_id
-        - customer_email
-        - items
-        - total_amount
-        - shipping_address
-        - created_at
-      properties:
-        order_id:
-          type: string
-          description: Unique identifier for the order
-        customer_id:
-          type: string
-          description: Unique identifier for the customer placing the order
-        customer_email:
-          type: string
-          format: email
-          description: Customer email for notifications
-        items:
-          type: array
-          description: List of items in the order
-          items:
-            $ref: '#/components/schemas/OrderItem'
-        total_amount:
-          type: string
-          description: Total order amount in dollars (decimal as string)
-        shipping_address:
-          $ref: '#/components/schemas/Address'
-        created_at:
-          type: string
-          format: date-time
-          description: Timestamp when the order was created
-        metadata:
-          type: object
-          additionalProperties:
+        schemaFormat: application/vnd.apache.avro+json;version=1.9.0
+        schema:
+          type: record
+          name: OrderCreated
+          namespace: com.example.orders.events
+          doc: Event emitted when a new order is created by a customer
+          fields:
+          - name: order_id
             type: string
-          description: Additional metadata for the order
+            doc: Unique identifier for the order
+          - name: customer_id
+            type: string
+            doc: Unique identifier for the customer placing the order
+          - name: customer_email
+            type: string
+            doc: Customer email for notifications
+          - name: items
+            type:
+              type: array
+              items:
+                type: record
+                name: OrderItem
+                fields:
+                - name: product_id
+                  type: string
+                  doc: Unique identifier for the product
+                - name: product_name
+                  type: string
+                  doc: Name of the product
+                - name: quantity
+                  type: int
+                  doc: Quantity ordered
+                - name: unit_price
+                  type:
+                    type: bytes
+                    logicalType: decimal
+                    precision: 10
+                    scale: 2
+                  doc: Price per unit in dollars
+            doc: List of items in the order
+          - name: total_amount
+            type:
+              type: bytes
+              logicalType: decimal
+              precision: 10
+              scale: 2
+            doc: Total order amount in dollars
+          - name: shipping_address
+            type:
+              type: record
+              name: Address
+              fields:
+              - name: street
+                type: string
+              - name: city
+                type: string
+              - name: state
+                type: string
+              - name: zip_code
+                type: string
+              - name: country
+                type: string
+                default: USA
+            doc: Shipping address for the order
+          - name: created_at
+            type:
+              type: long
+              logicalType: timestamp-millis
+            doc: Timestamp when the order was created
+          - name: metadata
+            type:
+              type: map
+              values: string
+            doc: Additional metadata for the order
+            default: {}
 
-    OrderItem:
-      type: object
-      description: Individual item in an order
-      required:
-        - product_id
-        - product_name
-        - quantity
-        - unit_price
-      properties:
-        product_id:
-          type: string
-          description: Unique identifier for the product
-        product_name:
-          type: string
-          description: Name of the product
-        quantity:
-          type: integer
-          minimum: 1
-          description: Quantity ordered
-        unit_price:
-          type: string
-          description: Price per unit in dollars (decimal as string)
-
-    Address:
-      type: object
-      description: Shipping or billing address
-      required:
-        - street
-        - city
-        - state
-        - zip_code
-      properties:
-        street:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        zip_code:
-          type: string
-        country:
-          type: string
-          default: USA

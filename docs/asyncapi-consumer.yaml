@@ -2,241 +2,137 @@ asyncapi: 3.0.0
 info:
   title: Order Fulfillment Service
   version: 1.0.0
-  description: |
-    ## Order Fulfillment Service
-    
-    This service consumes order events from SQS (bridged from Kafka via Redpanda Connect)
-    and processes them through the fulfillment pipeline.
-    
+  description: '## Order Fulfillment Service
+
+
+    This service consumes order events from SQS (bridged from Kafka via Redpanda Connect).
+
+
     ### Events Consumed
-    
+
+
     - **OrderCreated**: Triggers the fulfillment process
-    
+
+
     ### Processing Pipeline
-    
+
+
     ```
-    Kafka → Redpanda Connect → SQS → Consumer → Process Order
+
+    Kafka → Redpanda Connect → SQS → Consumer
+
     ```
-    
-    ### Architecture
-    
-    The consumer uses aiobotocore to poll SQS for messages. Each message is 
-    validated as an OrderCreated event and processed through the fulfillment 
-    workflow (accept → ship → fulfill).
 
-    ### Schema Registry
-
-    Event schemas are defined in Avro and registered in the Redpanda Schema Registry.
-
+    '
 defaultContentType: application/json
-
 servers:
   localstack:
     host: localstack:4566
     protocol: sqs
-    description: LocalStack SQS endpoint for local development
-  production:
-    host: sqs.us-east-1.amazonaws.com
-    protocol: sqs
-    description: AWS SQS endpoint
-
+    description: LocalStack SQS endpoint
 channels:
   order-events:
     address: order-events
-    description: |
-      SQS queue receiving order events bridged from Kafka.
-      Messages are JSON-encoded (deserialized from Avro by Redpanda Connect).
+    description: SQS queue receiving order events bridged from Kafka
     messages:
       OrderCreated:
         $ref: '#/components/messages/OrderCreated'
-
 operations:
   receiveOrderCreated:
     action: receive
     channel:
       $ref: '#/channels/order-events'
-    summary: Receive order created events
-    description: |
-      Consumes OrderCreated events from the order-events SQS queue.
-      Messages are bridged from Kafka via Redpanda Connect.
-      
-      Processing steps:
-      1. Validate message as OrderCreated
-      2. Accept order and assign warehouse
-      3. Generate shipping label and tracking number
-      4. Mark order as fulfilled
+    summary: Receive order created events from SQS
     messages:
-      - $ref: '#/channels/order-events/messages/OrderCreated'
-
+    - $ref: '#/channels/order-events/messages/OrderCreated'
 components:
   messages:
     OrderCreated:
       name: OrderCreated
       title: Order Created Event
-      summary: Event emitted when a new order is placed
-      description: |
-        Original event is Avro-encoded in Kafka. Redpanda Connect deserializes
-        to JSON before publishing to SQS.
-        
-        See the Avro schema for the canonical definition:
-        `schemas/order_created.avsc`
+      summary: Event emitted when a new order is created by a customer
+      description: 'Generated from Avro schema: schemas/order_created.avsc
+
+        Namespace: com.example.orders.events'
       contentType: application/json
       payload:
         $ref: '#/components/schemas/OrderCreated'
-      traits:
-        - $ref: '#/components/messageTraits/bridgeMetadata'
-      examples:
-        - name: Standard Order
-          summary: A typical order received from Kafka via SQS bridge
-          payload:
-            order_id: "ord_abc123"
-            customer_id: "cust_xyz789"
-            customer_email: "customer@example.com"
-            items:
-              - product_id: "prod_001"
-                product_name: "Widget Pro"
-                quantity: 2
-                unit_price: "49.99"
-            total_amount: "99.98"
-            shipping_address:
-              street: "123 Main St"
-              city: "Springfield"
-              state: "IL"
-              zip_code: "62701"
-              country: "USA"
-            created_at: "2026-01-19T12:00:00Z"
-            metadata:
-              source: "mobile"
-            bridge_metadata:
-              source_topic: "orders.created"
-              source_partition: 0
-              source_offset: 42
-              bridged_at: "2026-01-19T12:00:01Z"
-              event_type: "OrderCreated"
-
-  messageTraits:
-    bridgeMetadata:
-      description: Metadata added by Redpanda Connect bridge
-      headers:
-        type: object
-        properties:
-          source_topic:
-            type: string
-            description: Original Kafka topic
-          bridged_at:
-            type: string
-            format: date-time
-            description: When the message was bridged to SQS
-
   schemas:
-    # JSON Schema representation of the Avro schema
-    # Canonical definition: ../schemas/order_created.avsc
     OrderCreated:
       type: object
-      description: |
-        Event emitted when a new order is created.
-        
-        **Avro Schema**: `schemas/order_created.avsc`
-        **Namespace**: `com.example.orders.events`
-      required:
-        - order_id
-        - customer_id
-        - customer_email
-        - items
-        - total_amount
-        - shipping_address
-        - created_at
       properties:
         order_id:
           type: string
-          description: Unique order identifier
+          description: Unique identifier for the order
         customer_id:
           type: string
-          description: Customer identifier
+          description: Unique identifier for the customer placing the order
         customer_email:
           type: string
-          format: email
-          description: Customer email address
+          description: Customer email for notifications
         items:
           type: array
           items:
-            $ref: '#/components/schemas/OrderItem'
+            type: object
+            properties:
+              product_id:
+                type: string
+                description: Unique identifier for the product
+              product_name:
+                type: string
+                description: Name of the product
+              quantity:
+                type: integer
+                description: Quantity ordered
+              unit_price:
+                type: string
+                description: Price per unit in dollars
+            required:
+            - product_id
+            - product_name
+            - quantity
+            - unit_price
           description: List of items in the order
         total_amount:
           type: string
-          description: Total order amount (decimal as string)
+          description: Total order amount in dollars
         shipping_address:
-          $ref: '#/components/schemas/Address'
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            state:
+              type: string
+            zip_code:
+              type: string
+            country:
+              type: string
+              default: USA
+          required:
+          - street
+          - city
+          - state
+          - zip_code
+          description: Shipping address for the order
         created_at:
           type: string
           format: date-time
-          description: When the order was created
+          description: Timestamp when the order was created
         metadata:
           type: object
           additionalProperties:
             type: string
-          description: Optional metadata
-        bridge_metadata:
-          $ref: '#/components/schemas/BridgeMetadata'
-          description: Metadata added by Redpanda Connect (optional)
-
-    OrderItem:
-      type: object
-      description: Individual item in an order
+          description: Additional metadata for the order
+          default: {}
       required:
-        - product_id
-        - product_name
-        - quantity
-        - unit_price
-      properties:
-        product_id:
-          type: string
-        product_name:
-          type: string
-        quantity:
-          type: integer
-          minimum: 1
-        unit_price:
-          type: string
+      - order_id
+      - customer_id
+      - customer_email
+      - items
+      - total_amount
+      - shipping_address
+      - created_at
+      description: Event emitted when a new order is created by a customer
 
-    Address:
-      type: object
-      description: Shipping or billing address
-      required:
-        - street
-        - city
-        - state
-        - zip_code
-      properties:
-        street:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        zip_code:
-          type: string
-        country:
-          type: string
-          default: USA
-
-    BridgeMetadata:
-      type: object
-      description: Metadata added by Redpanda Connect when bridging from Kafka to SQS
-      properties:
-        source_topic:
-          type: string
-          description: Original Kafka topic name
-        source_partition:
-          type: integer
-          description: Kafka partition number
-        source_offset:
-          type: integer
-          description: Kafka offset
-        bridged_at:
-          type: string
-          format: date-time
-          description: When the message was bridged
-        event_type:
-          type: string
-          description: Event type identifier

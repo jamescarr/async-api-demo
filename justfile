@@ -133,6 +133,26 @@ register-all-schemas:
     just register-schema orders.delivered-value order_delivered.avsc
     @echo "✓ All schemas registered"
 
+# Schema Registry URL (use localhost for fetching schemas)
+registry_url := "http://localhost:18081"
+
+# Generate AsyncAPI specs with inlined Avro schemas (fetched from registry)
+generate-specs:
+    @echo "Generating AsyncAPI specs from Avro schemas..."
+    @echo "  Fetching from Schema Registry: {{ registry_url }}"
+    uv run --with pyyaml python scripts/generate_asyncapi.py producer --registry-url {{ registry_url }} --inline > docs/asyncapi-producer.yaml
+    uv run --with pyyaml python scripts/generate_asyncapi.py consumer > docs/asyncapi-consumer.yaml
+    @echo "✓ Generated docs/asyncapi-producer.yaml (Avro schema inlined)"
+    @echo "✓ Generated docs/asyncapi-consumer.yaml (JSON Schema)"
+
+# Generate AsyncAPI specs with $ref to Schema Registry (not inlined)
+generate-specs-ref:
+    @echo "Generating AsyncAPI specs with registry references..."
+    uv run --with pyyaml python scripts/generate_asyncapi.py producer --registry-url http://redpanda:8081 > docs/asyncapi-producer.yaml
+    uv run --with pyyaml python scripts/generate_asyncapi.py consumer > docs/asyncapi-consumer.yaml
+    @echo "✓ Generated docs/asyncapi-producer.yaml (refs http://redpanda:8081)"
+    @echo "✓ Generated docs/asyncapi-consumer.yaml"
+
 # List schemas in registry
 registry-schemas:
     @echo "=== Schema Registry Subjects ==="

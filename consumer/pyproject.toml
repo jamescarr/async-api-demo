@@ -14,6 +14,6 @@ dependencies = [
 [project.scripts]
 consumer = "app.cli:cli"
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = []
 

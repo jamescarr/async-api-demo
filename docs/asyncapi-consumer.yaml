@@ -1,298 +1,700 @@
-info:
-  title: Order Fulfillment Service
-  version: 1.0.0
-  description: '
+!!python/object:faststream.specification.asyncapi.v3_0_0.schema.schema.ApplicationSchema
+__dict__:
+  info: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.info.ApplicationInfo
+    __dict__:
+      title: Order Fulfillment Service
+      version: 1.0.0
+      description: '
 
-    ## Order Fulfillment Service
-
-
-    This service processes orders through the fulfillment pipeline.
-
-    It consumes order creation events and produces fulfillment lifecycle events.
+        ## Order Fulfillment Service
 
 
-    ### Events Consumed
+        This service processes orders through the fulfillment pipeline.
+
+        It consumes order creation events and produces fulfillment lifecycle events.
 
 
-    - **OrderCreated**: Triggers the fulfillment process
+        ### Events Consumed
 
 
-    ### Events Published
+        - **OrderCreated**: Triggers the fulfillment process
 
 
-    - **OrderAccepted**: Order validated and queued for fulfillment
-
-    - **OrderShipped**: Order has been shipped with tracking info
-
-    - **OrderFulfilled**: Terminal event, order process complete
+        ### Events Published
 
 
-    ### Processing Pipeline
+        - **OrderAccepted**: Order validated and queued for fulfillment
+
+        - **OrderShipped**: Order has been shipped with tracking info
+
+        - **OrderFulfilled**: Terminal event, order process complete
 
 
-    ```
-
-    OrderCreated --> Validate --> OrderAccepted --> Ship --> OrderShipped --> OrderFulfilled
-
-    ```
-
-    '
-asyncapi: 3.0.0
-defaultContentType: application/json
-servers:
-  development:
-    host: localhost:19092
-    pathname: ''
-    protocol: kafka
-    protocolVersion: auto
-channels:
-  Order Created Subscriber:
-    address: Order Created Subscriber
-    description: Consumes new order events and initiates fulfillment
-    servers:
-    - $ref: '#/servers/development'
-    messages:
-      SubscribeMessage:
-        $ref: '#/components/messages/Order Created Subscriber:SubscribeMessage'
-    bindings:
-      kafka:
-        topic: orders.created
-        bindingVersion: 0.4.0
-  Order Accepted Publisher:
-    address: Order Accepted Publisher
-    description: Publishes events when orders are validated and accepted
-    servers:
-    - $ref: '#/servers/development'
-    messages:
-      Message:
-        $ref: '#/components/messages/Order Accepted Publisher:Message'
-    bindings:
-      kafka:
-        topic: orders.accepted
-        bindingVersion: 0.4.0
-  Order Fulfilled Publisher:
-    address: Order Fulfilled Publisher
-    description: Publishes events when orders complete fulfillment
-    servers:
-    - $ref: '#/servers/development'
-    messages:
-      Message:
-        $ref: '#/components/messages/Order Fulfilled Publisher:Message'
-    bindings:
-      kafka:
-        topic: orders.fulfilled
-        bindingVersion: 0.4.0
-  Order Shipped Publisher:
-    address: Order Shipped Publisher
-    description: Publishes events when orders are shipped
-    servers:
-    - $ref: '#/servers/development'
-    messages:
-      Message:
-        $ref: '#/components/messages/Order Shipped Publisher:Message'
-    bindings:
-      kafka:
-        topic: orders.shipped
-        bindingVersion: 0.4.0
-operations:
-  Order Created Subscriber:
-    action: receive
-    channel:
-      $ref: '#/channels/Order Created Subscriber'
-    messages:
-    - $ref: '#/channels/Order Created Subscriber/messages/SubscribeMessage'
-  Order Accepted Publisher:
-    action: send
-    channel:
-      $ref: '#/channels/Order Accepted Publisher'
-    messages:
-    - $ref: '#/channels/Order Accepted Publisher/messages/Message'
-  Order Fulfilled Publisher:
-    action: send
-    channel:
-      $ref: '#/channels/Order Fulfilled Publisher'
-    messages:
-    - $ref: '#/channels/Order Fulfilled Publisher/messages/Message'
-  Order Shipped Publisher:
-    action: send
-    channel:
-      $ref: '#/channels/Order Shipped Publisher'
-    messages:
-    - $ref: '#/channels/Order Shipped Publisher/messages/Message'
-components:
-  messages:
-    Order Created Subscriber:SubscribeMessage:
-      title: Order Created Subscriber:SubscribeMessage
-      correlationId:
-        location: $message.header#/correlation_id
-      payload:
-        $ref: '#/components/schemas/Order Created Subscriber:Message:Payload'
-    Order Accepted Publisher:Message:
-      title: Order Accepted Publisher:Message
-      correlationId:
-        location: $message.header#/correlation_id
-      payload:
-        $ref: '#/components/schemas/OrderAccepted'
-    Order Fulfilled Publisher:Message:
-      title: Order Fulfilled Publisher:Message
-      correlationId:
-        location: $message.header#/correlation_id
-      payload:
-        $ref: '#/components/schemas/OrderFulfilled'
-    Order Shipped Publisher:Message:
-      title: Order Shipped Publisher:Message
-      correlationId:
-        location: $message.header#/correlation_id
-      payload:
-        $ref: '#/components/schemas/OrderShipped'
-  schemas:
-    Order Created Subscriber:Message:Payload:
-      title: Order Created Subscriber:Message:Payload
-      type: string
-    OrderAccepted:
-      description: 'Event published when an order has been validated and accepted.
+        ### Processing Pipeline
 
 
-        This signals that the order passed validation and is queued for fulfillment.'
-      examples:
-      - accepted_at: '2026-01-15T10:30:00Z'
-        correlation_id: ord_12345
-        customer_id: cust_67890
-        estimated_ship_date: '2026-01-17'
-        order_id: ord_12345
-        warehouse_id: wh_east_01
-      properties:
-        order_id:
-          title: Order Id
+        ```
+
+        OrderCreated --> Validate --> OrderAccepted --> Ship --> OrderShipped -->
+        OrderFulfilled
+
+        ```
+
+        '
+      termsOfService: null
+      contact: null
+      license: null
+      tags: null
+      externalDocs: null
+    __pydantic_extra__: {}
+    __pydantic_fields_set__: !!set
+      license: null
+      title: null
+      externalDocs: null
+      description: null
+      contact: null
+      tags: null
+      version: null
+      termsOfService: null
+    __pydantic_private__: null
+  asyncapi: 3.0.0
+  id: null
+  defaultContentType: application/json
+  servers:
+    development: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.servers.Server
+      __dict__:
+        host: localhost:19092
+        pathname: ''
+        protocol: kafka
+        description: null
+        protocolVersion: auto
+        tags: null
+        security: null
+        variables: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        protocol: null
+        description: null
+        pathname: null
+        host: null
+        tags: null
+        protocolVersion: null
+      __pydantic_private__: null
+  channels:
+    Order Created Subscriber: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.channels.Channel
+      __dict__:
+        address: Order Created Subscriber
+        description: Consumes new order events and initiates fulfillment
+        servers:
+        - $ref: '#/servers/development'
+        messages:
+          SubscribeMessage: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+            __dict__:
+              ref: '#/components/messages/Order Created Subscriber:SubscribeMessage'
+            __pydantic_extra__: null
+            __pydantic_fields_set__: !!set
+              ref: null
+            __pydantic_private__: null
+        bindings: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.bindings.main.channel.ChannelBinding
+          __dict__:
+            amqp: null
+            kafka: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.bindings.kafka.channel.ChannelBinding
+              __dict__:
+                topic: orders.created
+                partitions: null
+                replicas: null
+                bindingVersion: 0.4.0
+              __pydantic_extra__: null
+              __pydantic_fields_set__: !!set
+                partitions: null
+                topic: null
+                replicas: null
+              __pydantic_private__: null
+            sqs: null
+            nats: null
+            redis: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            kafka: null
+          __pydantic_private__: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        bindings: null
+        description: null
+        servers: null
+        messages: null
+        address: null
+      __pydantic_private__: null
+    Order Accepted Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.channels.Channel
+      __dict__:
+        address: Order Accepted Publisher
+        description: Publishes events when orders are validated and accepted
+        servers:
+        - $ref: '#/servers/development'
+        messages:
+          Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+            __dict__:
+              ref: '#/components/messages/Order Accepted Publisher:Message'
+            __pydantic_extra__: null
+            __pydantic_fields_set__: !!set
+              ref: null
+            __pydantic_private__: null
+        bindings: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.bindings.main.channel.ChannelBinding
+          __dict__:
+            amqp: null
+            kafka: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.bindings.kafka.channel.ChannelBinding
+              __dict__:
+                topic: orders.accepted
+                partitions: null
+                replicas: null
+                bindingVersion: 0.4.0
+              __pydantic_extra__: null
+              __pydantic_fields_set__: !!set
+                partitions: null
+                topic: null
+                replicas: null
+              __pydantic_private__: null
+            sqs: null
+            nats: null
+            redis: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            kafka: null
+          __pydantic_private__: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        bindings: null
+        description: null
+        servers: null
+        messages: null
+        address: null
+      __pydantic_private__: null
+    Order Shipped Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.channels.Channel
+      __dict__:
+        address: Order Shipped Publisher
+        description: Publishes events when orders are shipped
+        servers:
+        - $ref: '#/servers/development'
+        messages:
+          Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+            __dict__:
+              ref: '#/components/messages/Order Shipped Publisher:Message'
+            __pydantic_extra__: null
+            __pydantic_fields_set__: !!set
+              ref: null
+            __pydantic_private__: null
+        bindings: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.bindings.main.channel.ChannelBinding
+          __dict__:
+            amqp: null
+            kafka: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.bindings.kafka.channel.ChannelBinding
+              __dict__:
+                topic: orders.shipped
+                partitions: null
+                replicas: null
+                bindingVersion: 0.4.0
+              __pydantic_extra__: null
+              __pydantic_fields_set__: !!set
+                partitions: null
+                topic: null
+                replicas: null
+              __pydantic_private__: null
+            sqs: null
+            nats: null
+            redis: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            kafka: null
+          __pydantic_private__: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        bindings: null
+        description: null
+        servers: null
+        messages: null
+        address: null
+      __pydantic_private__: null
+    Order Fulfilled Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.channels.Channel
+      __dict__:
+        address: Order Fulfilled Publisher
+        description: Publishes events when orders complete fulfillment
+        servers:
+        - $ref: '#/servers/development'
+        messages:
+          Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+            __dict__:
+              ref: '#/components/messages/Order Fulfilled Publisher:Message'
+            __pydantic_extra__: null
+            __pydantic_fields_set__: !!set
+              ref: null
+            __pydantic_private__: null
+        bindings: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.bindings.main.channel.ChannelBinding
+          __dict__:
+            amqp: null
+            kafka: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.bindings.kafka.channel.ChannelBinding
+              __dict__:
+                topic: orders.fulfilled
+                partitions: null
+                replicas: null
+                bindingVersion: 0.4.0
+              __pydantic_extra__: null
+              __pydantic_fields_set__: !!set
+                partitions: null
+                topic: null
+                replicas: null
+              __pydantic_private__: null
+            sqs: null
+            nats: null
+            redis: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            kafka: null
+          __pydantic_private__: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        bindings: null
+        description: null
+        servers: null
+        messages: null
+        address: null
+      __pydantic_private__: null
+  operations:
+    Order Created Subscriber: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.operations.Operation
+      __dict__:
+        action: !!python/object/apply:faststream.specification.asyncapi.v3_0_0.schema.operations.Action
+        - receive
+        channel: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Created Subscriber'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        summary: null
+        description: null
+        bindings: null
+        messages:
+        - !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Created Subscriber/messages/SubscribeMessage'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        security: null
+        tags: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        summary: null
+        channel: null
+        bindings: null
+        description: null
+        action: null
+        messages: null
+        tags: null
+        security: null
+      __pydantic_private__: null
+    Order Accepted Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.operations.Operation
+      __dict__:
+        action: !!python/object/apply:faststream.specification.asyncapi.v3_0_0.schema.operations.Action
+        - send
+        channel: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Accepted Publisher'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        summary: null
+        description: null
+        bindings: null
+        messages:
+        - !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Accepted Publisher/messages/Message'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        security: null
+        tags: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        summary: null
+        channel: null
+        bindings: null
+        description: null
+        action: null
+        messages: null
+        tags: null
+        security: null
+      __pydantic_private__: null
+    Order Shipped Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.operations.Operation
+      __dict__:
+        action: !!python/object/apply:faststream.specification.asyncapi.v3_0_0.schema.operations.Action
+        - send
+        channel: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Shipped Publisher'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        summary: null
+        description: null
+        bindings: null
+        messages:
+        - !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Shipped Publisher/messages/Message'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        security: null
+        tags: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        summary: null
+        channel: null
+        bindings: null
+        description: null
+        action: null
+        messages: null
+        tags: null
+        security: null
+      __pydantic_private__: null
+    Order Fulfilled Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.operations.Operation
+      __dict__:
+        action: !!python/object/apply:faststream.specification.asyncapi.v3_0_0.schema.operations.Action
+        - send
+        channel: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Fulfilled Publisher'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        summary: null
+        description: null
+        bindings: null
+        messages:
+        - !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
+          __dict__:
+            ref: '#/channels/Order Fulfilled Publisher/messages/Message'
+          __pydantic_extra__: null
+          __pydantic_fields_set__: !!set
+            ref: null
+          __pydantic_private__: null
+        security: null
+        tags: null
+      __pydantic_extra__: {}
+      __pydantic_fields_set__: !!set
+        summary: null
+        channel: null
+        bindings: null
+        description: null
+        action: null
+        messages: null
+        tags: null
+        security: null
+      __pydantic_private__: null
+  components: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.components.Components
+    __dict__:
+      messages:
+        Order Created Subscriber:SubscribeMessage: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.Message
+          __dict__:
+            title: Order Created Subscriber:SubscribeMessage
+            name: null
+            summary: null
+            description: null
+            messageId: null
+            correlationId: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.CorrelationId
+              __dict__:
+                location: $message.header#/correlation_id
+                description: null
+              __pydantic_extra__: {}
+              __pydantic_fields_set__: !!set
+                location: null
+                description: null
+              __pydantic_private__: null
+            contentType: null
+            payload:
+              $ref: '#/components/schemas/Order Created Subscriber:Message:Payload'
+            tags: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            summary: null
+            title: null
+            correlationId: null
+            payload: null
+            description: null
+            contentType: null
+            messageId: null
+            tags: null
+            name: null
+          __pydantic_private__: null
+        Order Accepted Publisher:Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.Message
+          __dict__:
+            title: Order Accepted Publisher:Message
+            name: null
+            summary: null
+            description: null
+            messageId: null
+            correlationId: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.CorrelationId
+              __dict__:
+                location: $message.header#/correlation_id
+                description: null
+              __pydantic_extra__: {}
+              __pydantic_fields_set__: !!set
+                location: null
+                description: null
+              __pydantic_private__: null
+            contentType: null
+            payload:
+              $ref: '#/components/schemas/OrderAccepted'
+            tags: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            summary: null
+            title: null
+            correlationId: null
+            payload: null
+            description: null
+            contentType: null
+            messageId: null
+            tags: null
+            name: null
+          __pydantic_private__: null
+        Order Shipped Publisher:Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.Message
+          __dict__:
+            title: Order Shipped Publisher:Message
+            name: null
+            summary: null
+            description: null
+            messageId: null
+            correlationId: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.CorrelationId
+              __dict__:
+                location: $message.header#/correlation_id
+                description: null
+              __pydantic_extra__: {}
+              __pydantic_fields_set__: !!set
+                location: null
+                description: null
+              __pydantic_private__: null
+            contentType: null
+            payload:
+              $ref: '#/components/schemas/OrderShipped'
+            tags: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            summary: null
+            title: null
+            correlationId: null
+            payload: null
+            description: null
+            contentType: null
+            messageId: null
+            tags: null
+            name: null
+          __pydantic_private__: null
+        Order Fulfilled Publisher:Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.Message
+          __dict__:
+            title: Order Fulfilled Publisher:Message
+            name: null
+            summary: null
+            description: null
+            messageId: null
+            correlationId: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.CorrelationId
+              __dict__:
+                location: $message.header#/correlation_id
+                description: null
+              __pydantic_extra__: {}
+              __pydantic_fields_set__: !!set
+                location: null
+                description: null
+              __pydantic_private__: null
+            contentType: null
+            payload:
+              $ref: '#/components/schemas/OrderFulfilled'
+            tags: null
+          __pydantic_extra__: {}
+          __pydantic_fields_set__: !!set
+            summary: null
+            title: null
+            correlationId: null
+            payload: null
+            description: null
+            contentType: null
+            messageId: null
+            tags: null
+            name: null
+          __pydantic_private__: null
+      schemas:
+        Order Created Subscriber:Message:Payload:
+          title: Order Created Subscriber:Message:Payload
           type: string
-        customer_id:
-          title: Customer Id
-          type: string
-        accepted_at:
-          format: date-time
-          title: Accepted At
-          type: string
-        estimated_ship_date:
-          format: date
-          title: Estimated Ship Date
-          type: string
-        warehouse_id:
-          title: Warehouse Id
-          type: string
-        correlation_id:
-          title: Correlation Id
-          type: string
-      required:
-      - order_id
-      - customer_id
-      - estimated_ship_date
-      - warehouse_id
-      - correlation_id
-      title: OrderAccepted
-      type: object
-    Carrier:
-      description: Shipping carrier options.
-      enum:
-      - FEDEX
-      - UPS
-      - USPS
-      - DHL
-      title: Carrier
-      type: string
-    OrderFulfilled:
-      description: 'Event published when an order has been completely fulfilled.
+        OrderAccepted:
+          description: 'Event published when an order has been validated and accepted.
 
 
-        This is the terminal event in the fulfillment saga.'
-      examples:
-      - carrier: UPS
-        correlation_id: ord_12345
-        customer_id: cust_67890
-        fulfilled_at: '2026-01-17T14:00:00Z'
-        order_id: ord_12345
-        total_amount: '79.99'
-        tracking_number: 1Z999AA10123456784
-      properties:
-        order_id:
-          title: Order Id
+            This signals that the order passed validation and is queued for fulfillment.'
+          examples:
+          - accepted_at: '2026-01-15T10:30:00Z'
+            correlation_id: ord_12345
+            customer_id: cust_67890
+            estimated_ship_date: '2026-01-17'
+            order_id: ord_12345
+            warehouse_id: wh_east_01
+          properties:
+            order_id:
+              title: Order Id
+              type: string
+            customer_id:
+              title: Customer Id
+              type: string
+            accepted_at:
+              format: date-time
+              title: Accepted At
+              type: string
+            estimated_ship_date:
+              format: date
+              title: Estimated Ship Date
+              type: string
+            warehouse_id:
+              title: Warehouse Id
+              type: string
+            correlation_id:
+              title: Correlation Id
+              type: string
+          required:
+          - order_id
+          - customer_id
+          - estimated_ship_date
+          - warehouse_id
+          - correlation_id
+          title: OrderAccepted
+          type: object
+        Carrier:
+          description: Shipping carrier options.
+          enum:
+          - FEDEX
+          - UPS
+          - USPS
+          - DHL
+          title: Carrier
           type: string
-        customer_id:
-          title: Customer Id
-          type: string
-        fulfilled_at:
-          format: date-time
-          title: Fulfilled At
-          type: string
-        tracking_number:
-          title: Tracking Number
-          type: string
-        carrier:
-          $ref: '#/components/schemas/Carrier'
-        total_amount:
-          anyOf:
-          - type: number
-          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
-            type: string
-          title: Total Amount
-        correlation_id:
-          title: Correlation Id
-          type: string
-      required:
-      - order_id
-      - customer_id
-      - tracking_number
-      - carrier
-      - total_amount
-      - correlation_id
-      title: OrderFulfilled
-      type: object
-    OrderShipped:
-      description: 'Event published when an order has been shipped.
+        OrderShipped:
+          description: 'Event published when an order has been shipped.
 
 
-        Contains tracking information for the customer.'
-      examples:
-      - carrier: UPS
-        correlation_id: ord_12345
-        customer_id: cust_67890
-        estimated_delivery_date: '2026-01-20'
-        order_id: ord_12345
-        shipped_at: '2026-01-17T14:00:00Z'
-        tracking_number: 1Z999AA10123456784
-        warehouse_id: wh_east_01
-      properties:
-        order_id:
-          title: Order Id
-          type: string
-        customer_id:
-          title: Customer Id
-          type: string
-        tracking_number:
-          title: Tracking Number
-          type: string
-        carrier:
-          $ref: '#/components/schemas/Carrier'
-        shipped_at:
-          format: date-time
-          title: Shipped At
-          type: string
-        estimated_delivery_date:
-          format: date
-          title: Estimated Delivery Date
-          type: string
-        warehouse_id:
-          title: Warehouse Id
-          type: string
-        correlation_id:
-          title: Correlation Id
-          type: string
-      required:
-      - order_id
-      - customer_id
-      - tracking_number
-      - carrier
-      - estimated_delivery_date
-      - warehouse_id
-      - correlation_id
-      title: OrderShipped
-      type: object
+            Contains tracking information for the customer.'
+          examples:
+          - carrier: UPS
+            correlation_id: ord_12345
+            customer_id: cust_67890
+            estimated_delivery_date: '2026-01-20'
+            order_id: ord_12345
+            shipped_at: '2026-01-17T14:00:00Z'
+            tracking_number: 1Z999AA10123456784
+            warehouse_id: wh_east_01
+          properties:
+            order_id:
+              title: Order Id
+              type: string
+            customer_id:
+              title: Customer Id
+              type: string
+            tracking_number:
+              title: Tracking Number
+              type: string
+            carrier:
+              $ref: '#/components/schemas/Carrier'
+            shipped_at:
+              format: date-time
+              title: Shipped At
+              type: string
+            estimated_delivery_date:
+              format: date
+              title: Estimated Delivery Date
+              type: string
+            warehouse_id:
+              title: Warehouse Id
+              type: string
+            correlation_id:
+              title: Correlation Id
+              type: string
+          required:
+          - order_id
+          - customer_id
+          - tracking_number
+          - carrier
+          - estimated_delivery_date
+          - warehouse_id
+          - correlation_id
+          title: OrderShipped
+          type: object
+        OrderFulfilled:
+          description: 'Event published when an order has been completely fulfilled.
+
+
+            This is the terminal event in the fulfillment saga.'
+          examples:
+          - carrier: UPS
+            correlation_id: ord_12345
+            customer_id: cust_67890
+            fulfilled_at: '2026-01-17T14:00:00Z'
+            order_id: ord_12345
+            total_amount: '79.99'
+            tracking_number: 1Z999AA10123456784
+          properties:
+            order_id:
+              title: Order Id
+              type: string
+            customer_id:
+              title: Customer Id
+              type: string
+            fulfilled_at:
+              format: date-time
+              title: Fulfilled At
+              type: string
+            tracking_number:
+              title: Tracking Number
+              type: string
+            carrier:
+              $ref: '#/components/schemas/Carrier'
+            total_amount:
+              anyOf:
+              - type: number
+              - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+                type: string
+              title: Total Amount
+            correlation_id:
+              title: Correlation Id
+              type: string
+          required:
+          - order_id
+          - customer_id
+          - tracking_number
+          - carrier
+          - total_amount
+          - correlation_id
+          title: OrderFulfilled
+          type: object
+      securitySchemes: null
+    __pydantic_extra__: {}
+    __pydantic_fields_set__: !!set
+      messages: null
+      securitySchemes: null
+      schemas: null
+    __pydantic_private__: null
+__pydantic_extra__: null
+__pydantic_fields_set__: !!set
+  id: null
+  servers: null
+  components: null
+  channels: null
+  operations: null
+  asyncapi: null
+  info: null
+  defaultContentType: null
+__pydantic_private__: null

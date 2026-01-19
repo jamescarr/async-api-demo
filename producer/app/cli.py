@@ -2,8 +2,10 @@
 CLI commands for the Order Producer service.
 """
 import asyncio
+import json
 
 import click
+import yaml
 
 
 @click.group()
@@ -26,10 +28,13 @@ def asyncapi(output_yaml: bool, output: str | None):
     """Generate AsyncAPI specification."""
     from .main import app
 
+    # Get the schema as a jsonable dict (FastStream 0.6+)
+    schema = app.schema.to_specification()
+
     if output_yaml:
-        content = app.schema.to_yaml()
+        content = yaml.dump(schema, default_flow_style=False, sort_keys=False, allow_unicode=True)
     else:
-        content = app.schema.to_json()
+        content = json.dumps(schema, indent=2)
 
     if output:
         with open(output, "w") as f:
@@ -41,4 +46,3 @@ def asyncapi(output_yaml: bool, output: str | None):
 
 if __name__ == "__main__":
     cli()
-

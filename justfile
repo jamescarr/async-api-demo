@@ -109,12 +109,12 @@ group-describe group:
 
 # Generate producer AsyncAPI spec from code
 generate-producer-spec:
-    cd producer && uv run producer asyncapi --yaml -o ../docs/asyncapi-producer.yaml
+    cd producer && uv run python -m app.cli asyncapi --yaml -o ../docs/asyncapi-producer.yaml
     @echo "✓ Generated docs/asyncapi-producer.yaml"
 
 # Generate consumer AsyncAPI spec from code
 generate-consumer-spec:
-    cd consumer && uv run consumer asyncapi --yaml -o ../docs/asyncapi-consumer.yaml
+    cd consumer && uv run python -m app.cli asyncapi --yaml -o ../docs/asyncapi-consumer.yaml
     @echo "✓ Generated docs/asyncapi-consumer.yaml"
 
 # Generate all AsyncAPI specs from code
@@ -209,11 +209,11 @@ sync: sync-producer sync-consumer
 
 # Run producer locally (outside Docker)
 run-producer:
-    cd producer && uv run producer run
+    cd producer && uv run python -m app.cli run
 
 # Run consumer locally (outside Docker)
 run-consumer:
-    cd consumer && uv run consumer run
+    cd consumer && uv run python -m app.cli run
 
 # ─────────────────────────────────────────────────────────────
 # Health & Status

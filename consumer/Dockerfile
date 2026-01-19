@@ -9,8 +9,8 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY app ./app
 
-# Sync dependencies (creates venv and installs)
-RUN uv sync --no-dev
+# Sync dependencies and install the package (makes entry points available)
+RUN uv sync --no-dev && uv pip install -e .
 
 # Run the consumer
 CMD ["uv", "run", "consumer", "run"]

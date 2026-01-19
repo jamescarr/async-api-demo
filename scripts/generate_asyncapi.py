@@ -247,31 +247,30 @@ def generate_consumer_spec(schemas_dir: Path) -> dict:
             "version": "1.0.0",
             "description": """## Order Fulfillment Service
 
-This service consumes order events from SQS (bridged from Kafka via Redpanda Connect).
+Consumes order events from SQS and processes them through the fulfillment pipeline.
 
 ### Events Consumed
 
 - **OrderCreated**: Triggers the fulfillment process
-
-### Processing Pipeline
-
-```
-Kafka → Redpanda Connect → SQS → Consumer
-```
 """,
         },
         "defaultContentType": "application/json",
         "servers": {
-            "localstack": {
-                "host": "localstack:4566",
+            "development": {
+                "host": "localhost:4566",
                 "protocol": "sqs",
-                "description": "LocalStack SQS endpoint",
+                "description": "LocalStack SQS (local development)",
+            },
+            "production": {
+                "host": "sqs.us-east-1.amazonaws.com",
+                "protocol": "sqs",
+                "description": "AWS SQS (production)",
             },
         },
         "channels": {
             "order-events": {
-                "address": "order-events",
-                "description": "SQS queue receiving order events bridged from Kafka",
+                "address": "https://sqs.us-east-1.amazonaws.com/123456789012/order-events",
+                "description": "Queue for incoming order events",
                 "messages": {
                     "OrderCreated": {"$ref": "#/components/messages/OrderCreated"},
                 },

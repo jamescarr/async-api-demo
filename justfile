@@ -99,21 +99,48 @@ group-describe group:
     docker compose exec redpanda rpk group describe {{ group }}
 
 # ─────────────────────────────────────────────────────────────
-# AsyncAPI Spec Generation (from code)
+# Avro Schemas
 # ─────────────────────────────────────────────────────────────
 
-# Generate producer AsyncAPI spec from code (FastStream)
-generate-producer-spec:
-    cd producer && uv run faststream docs gen app.main:app --yaml && mv asyncapi.yaml ../docs/asyncapi-producer.yaml
-    @echo "✓ Generated docs/asyncapi-producer.yaml"
+# List all Avro schemas
+list-schemas:
+    @echo "=== Avro Schemas ==="
+    @ls -la schemas/*.avsc
 
-# Generate all specs (consumer spec is manually maintained in docs/asyncapi-consumer.yaml)
-generate-specs: generate-producer-spec
-    @echo "✓ Producer spec generated (consumer spec is design-first, manually maintained)"
+# Validate Avro schemas (requires avro-tools or python fastavro)
+validate-schemas:
+    @echo "Validating Avro schemas..."
+    @for f in schemas/*.avsc; do \
+        echo "  Checking $$f..."; \
+        python3 -c "import json; json.load(open('$$f'))" && echo "    ✓ Valid JSON"; \
+    done
+    @echo "✓ All schemas are valid JSON"
 
-# Serve producer docs locally (FastStream studio)
-serve-producer-docs:
-    cd producer && uv run faststream docs serve app.main:app
+# Register schema with Redpanda Schema Registry
+register-schema subject schema:
+    @echo "Registering {{ schema }} as {{ subject }}..."
+    curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+        --data "{\"schema\": $(cat schemas/{{ schema }} | jq -c . | jq -Rs .)}" \
+        http://localhost:18081/subjects/{{ subject }}/versions
+    @echo ""
+
+# Register all schemas with default subjects
+register-all-schemas:
+    @echo "Registering schemas with Schema Registry..."
+    just register-schema orders.created-value order_created.avsc
+    just register-schema orders.accepted-value order_accepted.avsc
+    just register-schema orders.shipped-value order_shipped.avsc
+    just register-schema orders.delivered-value order_delivered.avsc
+    @echo "✓ All schemas registered"
+
+# List schemas in registry
+registry-schemas:
+    @echo "=== Schema Registry Subjects ==="
+    curl -s http://localhost:18081/subjects | jq .
+
+# Get schema by subject
+registry-get subject:
+    curl -s http://localhost:18081/subjects/{{ subject }}/versions/latest | jq .
 
 # ─────────────────────────────────────────────────────────────
 # AsyncAPI CLI Tools (npm install -g @asyncapi/cli)

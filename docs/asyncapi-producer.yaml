@@ -1,166 +1,211 @@
+asyncapi: 3.0.0
 info:
   title: Order Producer Service
   version: 1.0.0
-  description: "\n## Order Producer Service\n\nThis service generates order events\
-    \ and publishes them to Kafka.\nIt simulates an e-commerce order intake system.\n\
-    \n### Events Published\n\n- **OrderCreated**: Emitted when a new order is placed\n\
-    \n### Architecture\n\n```\n[Order Producer] --> [orders.created topic] --> [Order\
-    \ Consumer]\n                                             |\n                \
-    \                             --> [Redpanda Connect] --> [SQS]\n```\n"
-asyncapi: 3.0.0
+  description: |
+    ## Order Producer Service
+
+    This service generates order events and publishes them to Kafka.
+    It simulates an e-commerce order intake system.
+
+    ### Events Published
+
+    - **OrderCreated**: Emitted when a new order is placed
+
+    ### Architecture
+
+    ```
+    [Order Producer] --> [orders.created topic] --> [Order Consumer]
+                                                 |
+                                                 --> [Redpanda Connect] --> [SQS]
+    ```
+
+    ### Schema Registry
+
+    All events use Avro schemas registered in the Redpanda Schema Registry.
+    - Development: `http://localhost:18081`
+    - Internal: `http://redpanda:8081`
+
+    ### Avro Schemas
+
+    The canonical event definitions are in Avro format:
+    - `schemas/order_created.avsc` - OrderCreated event
+
 defaultContentType: application/json
+
 servers:
   development:
     host: localhost:19092
-    pathname: ''
     protocol: kafka
-    protocolVersion: auto
+    description: Local Redpanda broker for development
+  production:
+    host: redpanda:9092
+    protocol: kafka
+    description: Internal Redpanda broker
+
 channels:
-  OrderCreated:
-    address: OrderCreated
-    description: Publishes new order events to the orders.created topic
+  orders.created:
+    address: orders.created
+    description: Topic for newly created order events
     servers:
-    - $ref: '#/servers/development'
+      - $ref: '#/servers/development'
     messages:
-      Message:
-        $ref: '#/components/messages/OrderCreated:Message'
+      OrderCreated:
+        $ref: '#/components/messages/OrderCreated'
     bindings:
       kafka:
         topic: orders.created
-        bindingVersion: 0.4.0
+        partitions: 3
+        replicas: 1
+
 operations:
-  OrderCreated:
+  publishOrderCreated:
     action: send
     channel:
-      $ref: '#/channels/OrderCreated'
+      $ref: '#/channels/orders.created'
+    summary: Publish a new order event
+    description: |
+      Publishes an OrderCreated event when a customer places a new order.
+      
+      **Avro Schema**: `schemas/order_created.avsc`
+      
+      The event is serialized using Avro and registered in the Schema Registry
+      under subject `orders.created-value`.
     messages:
-    - $ref: '#/channels/OrderCreated/messages/Message'
+      - $ref: '#/channels/orders.created/messages/OrderCreated'
+
 components:
   messages:
-    OrderCreated:Message:
-      title: OrderCreated:Message
-      correlationId:
-        location: $message.header#/correlation_id
+    OrderCreated:
+      name: OrderCreated
+      title: Order Created Event
+      summary: Event emitted when a new order is placed
+      description: |
+        This is the initiating event in the order fulfillment saga.
+        It triggers downstream processes like inventory reservation,
+        payment processing, and shipping preparation.
+        
+        **Avro Schema**: `schemas/order_created.avsc`
+        **Schema Registry Subject**: `orders.created-value`
+        **Namespace**: `com.example.orders.events`
+      contentType: application/json
       payload:
         $ref: '#/components/schemas/OrderCreated'
-  schemas:
-    Address:
-      description: Shipping or billing address.
-      properties:
-        street:
-          title: Street
-          type: string
-        city:
-          title: City
-          type: string
-        state:
-          title: State
-          type: string
-        zip_code:
-          title: Zip Code
-          type: string
-        country:
-          default: USA
-          title: Country
-          type: string
-      required:
-      - street
-      - city
-      - state
-      - zip_code
-      title: Address
-      type: object
-    OrderItem:
-      description: Individual item in an order.
-      properties:
-        product_id:
-          title: Product Id
-          type: string
-        product_name:
-          title: Product Name
-          type: string
-        quantity:
-          exclusiveMinimum: 0
-          title: Quantity
-          type: integer
-        unit_price:
-          anyOf:
-          - type: number
-          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
-            type: string
-          title: Unit Price
-      required:
-      - product_id
-      - product_name
-      - quantity
-      - unit_price
-      title: OrderItem
-      type: object
-    OrderCreated:
-      description: 'Event published when a new order is created.
-
-
-        This is the initiating event in the order fulfillment saga.
-
-        It triggers downstream processes like inventory reservation,
-
-        payment processing, and shipping preparation.'
+      correlationId:
+        location: $message.header#/correlation_id
       examples:
-      - customer_email: customer@example.com
-        customer_id: cust_67890
-        items:
-        - product_id: prod_001
-          product_name: Wireless Headphones
-          quantity: 1
-          unit_price: '79.99'
-        metadata:
-          campaign: holiday_sale
-          source: web
-        order_id: ord_12345
-        shipping_address:
-          city: Austin
-          country: USA
-          state: TX
-          street: 123 Main St
-          zip_code: '78701'
-        total_amount: '79.99'
+        - name: Standard Order
+          summary: A typical e-commerce order
+          payload:
+            order_id: "ord_12345"
+            customer_id: "cust_67890"
+            customer_email: "customer@example.com"
+            items:
+              - product_id: "prod_001"
+                product_name: "Wireless Headphones"
+                quantity: 1
+                unit_price: "79.99"
+            total_amount: "79.99"
+            shipping_address:
+              street: "123 Main St"
+              city: "Austin"
+              state: "TX"
+              zip_code: "78701"
+              country: "USA"
+            created_at: "2026-01-19T12:00:00Z"
+            metadata:
+              source: "web"
+              campaign: "holiday_sale"
+
+  schemas:
+    # JSON Schema representation matching the Avro schema
+    # Canonical definition: schemas/order_created.avsc
+    OrderCreated:
+      type: object
+      description: |
+        Event emitted when a new order is created by a customer.
+        
+        **Avro Schema**: `schemas/order_created.avsc`
+        **Namespace**: `com.example.orders.events`
+      required:
+        - order_id
+        - customer_id
+        - customer_email
+        - items
+        - total_amount
+        - shipping_address
+        - created_at
       properties:
         order_id:
-          title: Order Id
           type: string
+          description: Unique identifier for the order
         customer_id:
-          title: Customer Id
           type: string
+          description: Unique identifier for the customer placing the order
         customer_email:
-          title: Customer Email
           type: string
+          format: email
+          description: Customer email for notifications
         items:
+          type: array
+          description: List of items in the order
           items:
             $ref: '#/components/schemas/OrderItem'
-          title: Items
-          type: array
         total_amount:
-          anyOf:
-          - type: number
-          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
-            type: string
-          title: Total Amount
+          type: string
+          description: Total order amount in dollars (decimal as string)
         shipping_address:
           $ref: '#/components/schemas/Address'
         created_at:
-          format: date-time
-          title: Created At
           type: string
+          format: date-time
+          description: Timestamp when the order was created
         metadata:
+          type: object
           additionalProperties:
             type: string
-          title: Metadata
-          type: object
-      required:
-      - customer_id
-      - customer_email
-      - items
-      - total_amount
-      - shipping_address
-      title: OrderCreated
+          description: Additional metadata for the order
+
+    OrderItem:
       type: object
+      description: Individual item in an order
+      required:
+        - product_id
+        - product_name
+        - quantity
+        - unit_price
+      properties:
+        product_id:
+          type: string
+          description: Unique identifier for the product
+        product_name:
+          type: string
+          description: Name of the product
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity ordered
+        unit_price:
+          type: string
+          description: Price per unit in dollars (decimal as string)
+
+    Address:
+      type: object
+      description: Shipping or billing address
+      required:
+        - street
+        - city
+        - state
+        - zip_code
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip_code:
+          type: string
+        country:
+          type: string
+          default: USA

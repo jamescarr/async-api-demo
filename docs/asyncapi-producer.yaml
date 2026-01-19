@@ -1,0 +1,166 @@
+info:
+  title: Order Producer Service
+  version: 1.0.0
+  description: "\n## Order Producer Service\n\nThis service generates order events\
+    \ and publishes them to Kafka.\nIt simulates an e-commerce order intake system.\n\
+    \n### Events Published\n\n- **OrderCreated**: Emitted when a new order is placed\n\
+    \n### Architecture\n\n```\n[Order Producer] --> [orders.created topic] --> [Order\
+    \ Consumer]\n                                             |\n                \
+    \                             --> [Redpanda Connect] --> [SQS]\n```\n"
+asyncapi: 3.0.0
+defaultContentType: application/json
+servers:
+  development:
+    host: localhost:19092
+    pathname: ''
+    protocol: kafka
+    protocolVersion: auto
+channels:
+  Order Created Publisher:
+    address: Order Created Publisher
+    description: Publishes new order events to the orders.created topic
+    servers:
+    - $ref: '#/servers/development'
+    messages:
+      Message:
+        $ref: '#/components/messages/Order Created Publisher:Message'
+    bindings:
+      kafka:
+        topic: orders.created
+        bindingVersion: 0.4.0
+operations:
+  Order Created Publisher:
+    action: send
+    channel:
+      $ref: '#/channels/Order Created Publisher'
+    messages:
+    - $ref: '#/channels/Order Created Publisher/messages/Message'
+components:
+  messages:
+    Order Created Publisher:Message:
+      title: Order Created Publisher:Message
+      correlationId:
+        location: $message.header#/correlation_id
+      payload:
+        $ref: '#/components/schemas/OrderCreated'
+  schemas:
+    Address:
+      description: Shipping or billing address.
+      properties:
+        street:
+          title: Street
+          type: string
+        city:
+          title: City
+          type: string
+        state:
+          title: State
+          type: string
+        zip_code:
+          title: Zip Code
+          type: string
+        country:
+          default: USA
+          title: Country
+          type: string
+      required:
+      - street
+      - city
+      - state
+      - zip_code
+      title: Address
+      type: object
+    OrderItem:
+      description: Individual item in an order.
+      properties:
+        product_id:
+          title: Product Id
+          type: string
+        product_name:
+          title: Product Name
+          type: string
+        quantity:
+          exclusiveMinimum: 0
+          title: Quantity
+          type: integer
+        unit_price:
+          anyOf:
+          - type: number
+          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+            type: string
+          title: Unit Price
+      required:
+      - product_id
+      - product_name
+      - quantity
+      - unit_price
+      title: OrderItem
+      type: object
+    OrderCreated:
+      description: 'Event published when a new order is created.
+
+
+        This is the initiating event in the order fulfillment saga.
+
+        It triggers downstream processes like inventory reservation,
+
+        payment processing, and shipping preparation.'
+      examples:
+      - customer_email: customer@example.com
+        customer_id: cust_67890
+        items:
+        - product_id: prod_001
+          product_name: Wireless Headphones
+          quantity: 1
+          unit_price: '79.99'
+        metadata:
+          campaign: holiday_sale
+          source: web
+        order_id: ord_12345
+        shipping_address:
+          city: Austin
+          country: USA
+          state: TX
+          street: 123 Main St
+          zip_code: '78701'
+        total_amount: '79.99'
+      properties:
+        order_id:
+          title: Order Id
+          type: string
+        customer_id:
+          title: Customer Id
+          type: string
+        customer_email:
+          title: Customer Email
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          title: Items
+          type: array
+        total_amount:
+          anyOf:
+          - type: number
+          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+            type: string
+          title: Total Amount
+        shipping_address:
+          $ref: '#/components/schemas/Address'
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        metadata:
+          additionalProperties:
+            type: string
+          title: Metadata
+          type: object
+      required:
+      - customer_id
+      - customer_email
+      - items
+      - total_amount
+      - shipping_address
+      title: OrderCreated
+      type: object

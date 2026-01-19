@@ -1,0 +1,98 @@
+# Redpanda Connect Pipeline
+# Bridges order fulfillment events from Redpanda to AWS SQS
+#
+# This pipeline:
+# 1. Consumes events from multiple order topics
+# 2. Enriches messages with metadata
+# 3. Routes to appropriate SQS queues based on event type
+
+input:
+  kafka_franz:
+    seed_brokers:
+      - redpanda:9092
+    topics:
+      - orders.accepted
+      - orders.shipped
+      - orders.fulfilled
+    consumer_group: redpanda-connect-sqs-bridge
+    start_from_oldest: true
+
+pipeline:
+  processors:
+    # Extract event type from Kafka headers
+    - branch:
+        request_map: |
+          root = if @kafka_headers.exists("event_type") {
+            @kafka_headers.event_type
+          } else {
+            "Unknown"
+          }
+        processors:
+          - mapping: |
+              meta event_type = content().string()
+        result_map: |
+          meta event_type = meta("event_type")
+    
+    # Parse and enrich the message
+    - mapping: |
+        root = this.parse_json()
+        root.bridge_metadata = {
+          "source_topic": @kafka_topic,
+          "source_partition": @kafka_partition,
+          "source_offset": @kafka_offset,
+          "bridged_at": now(),
+          "event_type": meta("event_type"),
+          "correlation_id": @kafka_headers.correlation_id
+        }
+
+    # Add SQS message attributes for filtering
+    - mapping: |
+        meta sqs_event_type = meta("event_type")
+        meta sqs_source = "redpanda-connect"
+
+output:
+  # Route to different SQS queues based on event type
+  switch:
+    cases:
+      # Fulfillment events go to the main queue
+      - check: meta("event_type") == "OrderFulfilled"
+        output:
+          aws_sqs:
+            url: http://localstack:4566/000000000000/order-fulfillment-events
+            region: us-east-1
+            endpoint: http://localstack:4566
+            credentials:
+              id: test
+              secret: test
+            max_in_flight: 64
+            metadata:
+              exclude_prefixes: []
+            batching:
+              count: 10
+              period: 1s
+        
+      # All other events go to notifications queue
+      - output:
+          aws_sqs:
+            url: http://localstack:4566/000000000000/order-notifications
+            region: us-east-1
+            endpoint: http://localstack:4566
+            credentials:
+              id: test
+              secret: test
+            max_in_flight: 64
+            metadata:
+              exclude_prefixes: []
+            batching:
+              count: 10
+              period: 1s
+
+# Observability
+logger:
+  level: INFO
+  format: json
+
+metrics:
+  prometheus:
+    prefix: redpanda_connect
+

@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # Redpanda - Kafka-compatible streaming platform
+  redpanda:
+    image: redpandadata/redpanda:v24.2.4
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --mode dev-container
+      - --smp 1
+      - --default-log-level=info
+    ports:
+      - "18081:18081"  # Schema Registry
+      - "18082:18082"  # Pandaproxy (REST API)
+      - "19092:19092"  # Kafka API
+      - "19644:9644"   # Admin API
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redpanda Console - UI for managing Redpanda
+  console:
+    image: redpandadata/console:v2.7.0
+    container_name: redpanda-console
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_BROKERS=redpanda:9092
+      - KAFKA_SCHEMAREGISTRY_ENABLED=true
+      - KAFKA_SCHEMAREGISTRY_URLS=http://redpanda:8081
+    restart: unless-stopped
+
+  # LocalStack - AWS services emulator (SQS)
+  localstack:
+    image: localstack/localstack:3.6
+    container_name: localstack
+    ports:
+      - "4566:4566"  # LocalStack Gateway
+    environment:
+      - SERVICES=sqs
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redpanda Connect - Bridges Redpanda to SQS
+  connect:
+    image: redpandadata/connect:4.35.0
+    container_name: redpanda-connect
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    volumes:
+      - ./connect/pipeline.yaml:/pipeline.yaml
+    command: run /pipeline.yaml
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+      - SCHEMA_REGISTRY_URL=http://redpanda:8081
+    restart: unless-stopped
+
+  # Order Producer Service (FastStream)
+  producer:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: order-producer
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - SCHEMA_REGISTRY_URL=http://redpanda:8081
+    restart: unless-stopped
+
+  # Order Fulfillment Consumer Service (FastStream)
+  consumer:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: order-consumer
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      producer:
+        condition: service_started
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - SCHEMA_REGISTRY_URL=http://redpanda:8081
+    restart: unless-stopped
+
+volumes:
+  redpanda-data:
+  localstack-data:
+
+networks:
+  default:
+    name: asyncapi-demo
+

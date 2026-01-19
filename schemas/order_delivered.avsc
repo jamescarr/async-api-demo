@@ -1,0 +1,44 @@
+{
+  "type": "record",
+  "name": "OrderDelivered",
+  "namespace": "com.example.orders.events",
+  "doc": "Event emitted when an order has been delivered to the customer",
+  "fields": [
+    {
+      "name": "order_id",
+      "type": "string",
+      "doc": "Unique identifier for the order"
+    },
+    {
+      "name": "customer_id",
+      "type": "string",
+      "doc": "Unique identifier for the customer"
+    },
+    {
+      "name": "delivered_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Timestamp when the order was delivered"
+    },
+    {
+      "name": "signature_received",
+      "type": "boolean",
+      "default": false,
+      "doc": "Whether a signature was obtained on delivery"
+    },
+    {
+      "name": "delivery_notes",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional notes from the delivery driver"
+    },
+    {
+      "name": "correlation_id",
+      "type": "string",
+      "doc": "Correlation ID for tracing the order through the system"
+    }
+  ]
+}
+

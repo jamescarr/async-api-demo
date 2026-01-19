@@ -1,0 +1,59 @@
+{
+  "type": "record",
+  "name": "OrderShipped",
+  "namespace": "com.example.orders.events",
+  "doc": "Event emitted when an order has been shipped",
+  "fields": [
+    {
+      "name": "order_id",
+      "type": "string",
+      "doc": "Unique identifier for the order"
+    },
+    {
+      "name": "customer_id",
+      "type": "string",
+      "doc": "Unique identifier for the customer"
+    },
+    {
+      "name": "tracking_number",
+      "type": "string",
+      "doc": "Shipment tracking number"
+    },
+    {
+      "name": "carrier",
+      "type": {
+        "type": "enum",
+        "name": "Carrier",
+        "symbols": ["FEDEX", "UPS", "USPS", "DHL"]
+      },
+      "doc": "Shipping carrier"
+    },
+    {
+      "name": "shipped_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Timestamp when the order was shipped"
+    },
+    {
+      "name": "estimated_delivery_date",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      },
+      "doc": "Estimated delivery date"
+    },
+    {
+      "name": "warehouse_id",
+      "type": "string",
+      "doc": "ID of the warehouse that shipped the order"
+    },
+    {
+      "name": "correlation_id",
+      "type": "string",
+      "doc": "Correlation ID for tracing the order through the system"
+    }
+  ]
+}
+

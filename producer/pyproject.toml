@@ -1,0 +1,20 @@
+[project]
+name = "order-producer"
+version = "1.0.0"
+description = "Order Producer Service - generates random orders"
+requires-python = ">=3.12"
+dependencies = [
+    "faststream[kafka,cli]>=0.6.0",
+    "pydantic>=2.0,<3.0",
+    "faker>=28.0.0",
+    "structlog>=24.0.0",
+    "pyyaml>=6.0",
+    "click>=8.0.0",
+]
+
+[project.scripts]
+producer = "app.cli:cli"
+
+[tool.uv]
+dev-dependencies = []
+

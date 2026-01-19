@@ -1,0 +1,298 @@
+info:
+  title: Order Fulfillment Service
+  version: 1.0.0
+  description: '
+
+    ## Order Fulfillment Service
+
+
+    This service processes orders through the fulfillment pipeline.
+
+    It consumes order creation events and produces fulfillment lifecycle events.
+
+
+    ### Events Consumed
+
+
+    - **OrderCreated**: Triggers the fulfillment process
+
+
+    ### Events Published
+
+
+    - **OrderAccepted**: Order validated and queued for fulfillment
+
+    - **OrderShipped**: Order has been shipped with tracking info
+
+    - **OrderFulfilled**: Terminal event, order process complete
+
+
+    ### Processing Pipeline
+
+
+    ```
+
+    OrderCreated --> Validate --> OrderAccepted --> Ship --> OrderShipped --> OrderFulfilled
+
+    ```
+
+    '
+asyncapi: 3.0.0
+defaultContentType: application/json
+servers:
+  development:
+    host: localhost:19092
+    pathname: ''
+    protocol: kafka
+    protocolVersion: auto
+channels:
+  Order Created Subscriber:
+    address: Order Created Subscriber
+    description: Consumes new order events and initiates fulfillment
+    servers:
+    - $ref: '#/servers/development'
+    messages:
+      SubscribeMessage:
+        $ref: '#/components/messages/Order Created Subscriber:SubscribeMessage'
+    bindings:
+      kafka:
+        topic: orders.created
+        bindingVersion: 0.4.0
+  Order Accepted Publisher:
+    address: Order Accepted Publisher
+    description: Publishes events when orders are validated and accepted
+    servers:
+    - $ref: '#/servers/development'
+    messages:
+      Message:
+        $ref: '#/components/messages/Order Accepted Publisher:Message'
+    bindings:
+      kafka:
+        topic: orders.accepted
+        bindingVersion: 0.4.0
+  Order Fulfilled Publisher:
+    address: Order Fulfilled Publisher
+    description: Publishes events when orders complete fulfillment
+    servers:
+    - $ref: '#/servers/development'
+    messages:
+      Message:
+        $ref: '#/components/messages/Order Fulfilled Publisher:Message'
+    bindings:
+      kafka:
+        topic: orders.fulfilled
+        bindingVersion: 0.4.0
+  Order Shipped Publisher:
+    address: Order Shipped Publisher
+    description: Publishes events when orders are shipped
+    servers:
+    - $ref: '#/servers/development'
+    messages:
+      Message:
+        $ref: '#/components/messages/Order Shipped Publisher:Message'
+    bindings:
+      kafka:
+        topic: orders.shipped
+        bindingVersion: 0.4.0
+operations:
+  Order Created Subscriber:
+    action: receive
+    channel:
+      $ref: '#/channels/Order Created Subscriber'
+    messages:
+    - $ref: '#/channels/Order Created Subscriber/messages/SubscribeMessage'
+  Order Accepted Publisher:
+    action: send
+    channel:
+      $ref: '#/channels/Order Accepted Publisher'
+    messages:
+    - $ref: '#/channels/Order Accepted Publisher/messages/Message'
+  Order Fulfilled Publisher:
+    action: send
+    channel:
+      $ref: '#/channels/Order Fulfilled Publisher'
+    messages:
+    - $ref: '#/channels/Order Fulfilled Publisher/messages/Message'
+  Order Shipped Publisher:
+    action: send
+    channel:
+      $ref: '#/channels/Order Shipped Publisher'
+    messages:
+    - $ref: '#/channels/Order Shipped Publisher/messages/Message'
+components:
+  messages:
+    Order Created Subscriber:SubscribeMessage:
+      title: Order Created Subscriber:SubscribeMessage
+      correlationId:
+        location: $message.header#/correlation_id
+      payload:
+        $ref: '#/components/schemas/Order Created Subscriber:Message:Payload'
+    Order Accepted Publisher:Message:
+      title: Order Accepted Publisher:Message
+      correlationId:
+        location: $message.header#/correlation_id
+      payload:
+        $ref: '#/components/schemas/OrderAccepted'
+    Order Fulfilled Publisher:Message:
+      title: Order Fulfilled Publisher:Message
+      correlationId:
+        location: $message.header#/correlation_id
+      payload:
+        $ref: '#/components/schemas/OrderFulfilled'
+    Order Shipped Publisher:Message:
+      title: Order Shipped Publisher:Message
+      correlationId:
+        location: $message.header#/correlation_id
+      payload:
+        $ref: '#/components/schemas/OrderShipped'
+  schemas:
+    Order Created Subscriber:Message:Payload:
+      title: Order Created Subscriber:Message:Payload
+      type: string
+    OrderAccepted:
+      description: 'Event published when an order has been validated and accepted.
+
+
+        This signals that the order passed validation and is queued for fulfillment.'
+      examples:
+      - accepted_at: '2026-01-15T10:30:00Z'
+        correlation_id: ord_12345
+        customer_id: cust_67890
+        estimated_ship_date: '2026-01-17'
+        order_id: ord_12345
+        warehouse_id: wh_east_01
+      properties:
+        order_id:
+          title: Order Id
+          type: string
+        customer_id:
+          title: Customer Id
+          type: string
+        accepted_at:
+          format: date-time
+          title: Accepted At
+          type: string
+        estimated_ship_date:
+          format: date
+          title: Estimated Ship Date
+          type: string
+        warehouse_id:
+          title: Warehouse Id
+          type: string
+        correlation_id:
+          title: Correlation Id
+          type: string
+      required:
+      - order_id
+      - customer_id
+      - estimated_ship_date
+      - warehouse_id
+      - correlation_id
+      title: OrderAccepted
+      type: object
+    Carrier:
+      description: Shipping carrier options.
+      enum:
+      - FEDEX
+      - UPS
+      - USPS
+      - DHL
+      title: Carrier
+      type: string
+    OrderFulfilled:
+      description: 'Event published when an order has been completely fulfilled.
+
+
+        This is the terminal event in the fulfillment saga.'
+      examples:
+      - carrier: UPS
+        correlation_id: ord_12345
+        customer_id: cust_67890
+        fulfilled_at: '2026-01-17T14:00:00Z'
+        order_id: ord_12345
+        total_amount: '79.99'
+        tracking_number: 1Z999AA10123456784
+      properties:
+        order_id:
+          title: Order Id
+          type: string
+        customer_id:
+          title: Customer Id
+          type: string
+        fulfilled_at:
+          format: date-time
+          title: Fulfilled At
+          type: string
+        tracking_number:
+          title: Tracking Number
+          type: string
+        carrier:
+          $ref: '#/components/schemas/Carrier'
+        total_amount:
+          anyOf:
+          - type: number
+          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+            type: string
+          title: Total Amount
+        correlation_id:
+          title: Correlation Id
+          type: string
+      required:
+      - order_id
+      - customer_id
+      - tracking_number
+      - carrier
+      - total_amount
+      - correlation_id
+      title: OrderFulfilled
+      type: object
+    OrderShipped:
+      description: 'Event published when an order has been shipped.
+
+
+        Contains tracking information for the customer.'
+      examples:
+      - carrier: UPS
+        correlation_id: ord_12345
+        customer_id: cust_67890
+        estimated_delivery_date: '2026-01-20'
+        order_id: ord_12345
+        shipped_at: '2026-01-17T14:00:00Z'
+        tracking_number: 1Z999AA10123456784
+        warehouse_id: wh_east_01
+      properties:
+        order_id:
+          title: Order Id
+          type: string
+        customer_id:
+          title: Customer Id
+          type: string
+        tracking_number:
+          title: Tracking Number
+          type: string
+        carrier:
+          $ref: '#/components/schemas/Carrier'
+        shipped_at:
+          format: date-time
+          title: Shipped At
+          type: string
+        estimated_delivery_date:
+          format: date
+          title: Estimated Delivery Date
+          type: string
+        warehouse_id:
+          title: Warehouse Id
+          type: string
+        correlation_id:
+          title: Correlation Id
+          type: string
+      required:
+      - order_id
+      - customer_id
+      - tracking_number
+      - carrier
+      - estimated_delivery_date
+      - warehouse_id
+      - correlation_id
+      title: OrderShipped
+      type: object

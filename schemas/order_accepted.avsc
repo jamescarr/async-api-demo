@@ -1,0 +1,45 @@
+{
+  "type": "record",
+  "name": "OrderAccepted",
+  "namespace": "com.example.orders.events",
+  "doc": "Event emitted when an order has been validated and accepted for fulfillment",
+  "fields": [
+    {
+      "name": "order_id",
+      "type": "string",
+      "doc": "Unique identifier for the order"
+    },
+    {
+      "name": "customer_id",
+      "type": "string",
+      "doc": "Unique identifier for the customer"
+    },
+    {
+      "name": "accepted_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Timestamp when the order was accepted"
+    },
+    {
+      "name": "estimated_ship_date",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      },
+      "doc": "Estimated date when the order will ship"
+    },
+    {
+      "name": "warehouse_id",
+      "type": "string",
+      "doc": "ID of the warehouse that will fulfill the order"
+    },
+    {
+      "name": "correlation_id",
+      "type": "string",
+      "doc": "Correlation ID for tracing the order through the system"
+    }
+  ]
+}
+

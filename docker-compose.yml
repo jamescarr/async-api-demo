@@ -98,20 +98,21 @@ services:
       - SCHEMA_REGISTRY_URL=http://redpanda:8081
     restart: unless-stopped
 
-  # Order Fulfillment Consumer Service (FastStream)
+  # Order Fulfillment Consumer Service (SQS)
   consumer:
     build:
       context: ./consumer
       dockerfile: Dockerfile
     container_name: order-consumer
     depends_on:
-      redpanda:
+      localstack:
         condition: service_healthy
-      producer:
+      connect:
         condition: service_started
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
-      - SCHEMA_REGISTRY_URL=http://redpanda:8081
+      - SQS_ENDPOINT=http://localstack:4566
+      - SQS_QUEUE_NAME=order-events
+      - AWS_REGION=us-east-1
     restart: unless-stopped
 
 volumes:

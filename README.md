@@ -1,30 +1,26 @@
 # AsyncAPI Demo: Order Fulfillment System
 
-A demonstration of event-driven architecture using AsyncAPI specifications, FastStream, Redpanda, and AWS SQS (via LocalStack).
+A demonstration of event-driven architecture using AsyncAPI specifications, FastStream, Redpanda, Redpanda Connect, and AWS SQS (via LocalStack).
 
 ## Architecture
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────────┐
-│  Order Producer │────▶│  orders.created  │────▶│  Order Fulfillment      │
-│   (FastStream)  │     │     (Kafka)      │     │     (FastStream)        │
-└─────────────────┘     └──────────────────┘     └──────────┬──────────────┘
-                                                           │
-                                                           ▼
-                        ┌──────────────────┐     ┌─────────────────────────┐
-                        │ orders.accepted  │◀────│                         │
-                        ├──────────────────┤     │    Publishes Events:    │
-                        │ orders.shipped   │◀────│    - OrderAccepted      │
-                        ├──────────────────┤     │    - OrderShipped       │
-                        │ orders.fulfilled │◀────│    - OrderFulfilled     │
-                        └────────┬─────────┘     └─────────────────────────┘
-                                 │
-                                 ▼
-                        ┌──────────────────┐     ┌─────────────────────────┐
-                        │ Redpanda Connect │────▶│    AWS SQS (LocalStack) │
-                        │   (Bridge)       │     │                         │
-                        └──────────────────┘     └─────────────────────────┘
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌─────────────┐
+│  Order Producer │────▶│  orders.created  │────▶│ Redpanda Connect │────▶│     SQS     │
+│   (FastStream)  │     │     (Kafka)      │     │    (Bridge)      │     │   Queue     │
+└─────────────────┘     └──────────────────┘     └──────────────────┘     └──────┬──────┘
+                                                                                  │
+                                                                                  ▼
+                                                                          ┌─────────────┐
+                                                                          │  Consumer   │
+                                                                          │   (SQS)     │
+                                                                          └─────────────┘
 ```
+
+**Flow:**
+1. Producer generates order events and publishes to Kafka (`orders.created` topic)
+2. Redpanda Connect bridges events from Kafka to SQS
+3. Consumer polls SQS queue and processes orders
 
 ## Components
 
@@ -32,10 +28,10 @@ A demonstration of event-driven architecture using AsyncAPI specifications, Fast
 |-----------|-------------|------|
 | Redpanda | Kafka-compatible streaming | 19092 (Kafka), 18081 (Schema Registry) |
 | Redpanda Console | Web UI for Redpanda | 8080 |
+| Redpanda Connect | Bridges Kafka → SQS | - |
 | LocalStack | AWS SQS emulator | 4566 |
-| Order Producer | Generates random orders | - |
-| Order Consumer | Processes orders, emits events | - |
-| Redpanda Connect | Bridges Kafka to SQS | - |
+| Order Producer | Generates random orders (FastStream) | - |
+| Order Consumer | Processes orders from SQS | - |
 
 ## Quick Start
 
@@ -57,67 +53,35 @@ just down
 just
 ```
 
-## Topics
+## Topics & Queues
 
-| Topic | Description | Producer | Consumer |
-|-------|-------------|----------|----------|
-| `orders.created` | New order events | Order Producer | Order Fulfillment |
-| `orders.accepted` | Order validation events | Order Fulfillment | Redpanda Connect |
-| `orders.shipped` | Shipping events | Order Fulfillment | Redpanda Connect |
-| `orders.fulfilled` | Completion events | Order Fulfillment | Redpanda Connect |
+**Kafka Topics:**
+| Topic | Description | Producer |
+|-------|-------------|----------|
+| `orders.created` | New order events | Order Producer |
 
-## SQS Queues
-
+**SQS Queues:**
 | Queue | Description |
 |-------|-------------|
-| `order-fulfillment-events` | Receives OrderFulfilled events |
-| `order-notifications` | Receives OrderAccepted/OrderShipped events |
-| `order-fulfillment-events-dlq` | Dead letter queue |
+| `order-events` | Order events (bridged from Kafka) |
+| `order-events-dlq` | Dead letter queue |
 
-## Avro Schemas
+## AsyncAPI Specification
 
-Schemas are defined in the `schemas/` directory:
-
-- `order_created.avsc` - New order events
-- `order_accepted.avsc` - Validation events
-- `order_shipped.avsc` - Shipping events
-- `order_delivered.avsc` - Delivery events
-
-## AsyncAPI Specifications
-
-AsyncAPI documents are in the `docs/` directory and are auto-generated from code.
-
-### Generate Specs from Code
-
-FastStream auto-generates AsyncAPI specs from your Python code:
+The producer's AsyncAPI spec is auto-generated from code:
 
 ```bash
-# Generate all specs
-just generate-specs
+# Generate spec
+just generate-spec
 
-# Or individually
-just generate-producer-spec
-just generate-consumer-spec
-```
+# Validate spec
+just validate
 
-This reads the `@broker.subscriber()` and `broker.publisher()` decorators along with 
-Pydantic models to build the spec automatically.
-
-### View Specs
-
-```bash
-# Install AsyncAPI CLI
-npm install -g @asyncapi/cli
-
-# Interactive studio
-just studio-producer
-just studio-consumer
+# Open in interactive studio
+just studio
 
 # Generate HTML docs
 just docs-html
-
-# Validate specs
-just validate
 ```
 
 ## Viewing Messages
@@ -156,18 +120,14 @@ just sqs-messages
 
 ### CLI Commands
 
-Each service has a click-based CLI:
-
 ```bash
 # Producer
-cd producer && uv run producer --help
-cd producer && uv run producer run          # Run the service
-cd producer && uv run producer asyncapi     # Generate AsyncAPI spec
+cd producer && uv run python -m app.cli --help
+cd producer && uv run python -m app.cli run
 
-# Consumer  
-cd consumer && uv run consumer --help
-cd consumer && uv run consumer run          # Run the service
-cd consumer && uv run consumer asyncapi     # Generate AsyncAPI spec
+# Consumer
+cd consumer && uv run python -m app.cli --help
+cd consumer && uv run python -m app.cli run
 ```
 
 ### Project Structure
@@ -176,31 +136,24 @@ cd consumer && uv run consumer asyncapi     # Generate AsyncAPI spec
 asyncapi-demo/
 ├── justfile                # Command runner
 ├── docker-compose.yml      # Infrastructure
-├── producer/               # Order Producer service
+├── producer/               # Order Producer service (FastStream + Kafka)
 │   ├── app/
 │   │   ├── main.py        # FastStream app
 │   │   ├── models.py      # Pydantic models
 │   │   ├── generator.py   # Random order generator
 │   │   └── cli.py         # Click CLI
 │   ├── Dockerfile
-│   └── pyproject.toml     # uv dependencies
-├── consumer/               # Order Fulfillment service
+│   └── pyproject.toml
+├── consumer/               # Order Consumer service (SQS)
 │   ├── app/
-│   │   ├── main.py        # FastStream app
-│   │   ├── models.py      # Pydantic models
+│   │   ├── main.py        # SQS polling consumer
 │   │   └── cli.py         # Click CLI
 │   ├── Dockerfile
-│   └── pyproject.toml     # uv dependencies
+│   └── pyproject.toml
 ├── connect/                # Redpanda Connect
-│   └── pipeline.yaml      # Bridge configuration
-├── schemas/                # Avro schemas
-│   ├── order_created.avsc
-│   ├── order_accepted.avsc
-│   ├── order_shipped.avsc
-│   └── order_delivered.avsc
+│   └── pipeline.yaml      # Kafka → SQS bridge config
 ├── docs/                   # AsyncAPI specs (generated)
-│   ├── asyncapi-producer.yaml
-│   └── asyncapi-consumer.yaml
+│   └── asyncapi-producer.yaml
 └── localstack/            # LocalStack init scripts
     └── init-aws.sh
 ```

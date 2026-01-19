@@ -63,16 +63,11 @@ connect-logs:
 # SQS (LocalStack)
 # ─────────────────────────────────────────────────────────────
 
-# Check SQS messages in both queues
+# Check SQS messages
 sqs-messages:
-    @echo "=== Order Fulfillment Events Queue ==="
+    @echo "=== Order Events Queue ==="
     aws --endpoint-url=http://localhost:4566 sqs receive-message \
-        --queue-url http://localhost:4566/000000000000/order-fulfillment-events \
-        --max-number-of-messages 5 2>/dev/null || echo "No messages"
-    @echo ""
-    @echo "=== Order Notifications Queue ==="
-    aws --endpoint-url=http://localhost:4566 sqs receive-message \
-        --queue-url http://localhost:4566/000000000000/order-notifications \
+        --queue-url http://localhost:4566/000000000000/order-events \
         --max-number-of-messages 5 2>/dev/null || echo "No messages"
 
 # List SQS queues
@@ -107,50 +102,43 @@ group-describe group:
 # AsyncAPI Spec Generation (from code)
 # ─────────────────────────────────────────────────────────────
 
-# Generate producer AsyncAPI spec from code
+# Generate producer AsyncAPI spec from code (FastStream)
 generate-producer-spec:
     cd producer && uv run faststream docs gen app.main:app --yaml && mv asyncapi.yaml ../docs/asyncapi-producer.yaml
     @echo "✓ Generated docs/asyncapi-producer.yaml"
 
-# Generate consumer AsyncAPI spec from code
-generate-consumer-spec:
-    cd consumer && uv run faststream docs gen app.main:app --yaml && mv asyncapi.yaml ../docs/asyncapi-consumer.yaml
-    @echo "✓ Generated docs/asyncapi-consumer.yaml"
+# Generate all specs (consumer spec is manually maintained in docs/asyncapi-consumer.yaml)
+generate-specs: generate-producer-spec
+    @echo "✓ Producer spec generated (consumer spec is design-first, manually maintained)"
 
-# Generate all AsyncAPI specs from code
-generate-specs: generate-producer-spec generate-consumer-spec
-    @echo "✓ All specs generated from code"
-
-# Serve producer docs locally (interactive viewer)
+# Serve producer docs locally (FastStream studio)
 serve-producer-docs:
     cd producer && uv run faststream docs serve app.main:app
-
-# Serve consumer docs locally (interactive viewer)
-serve-consumer-docs:
-    cd consumer && uv run faststream docs serve app.main:app
 
 # ─────────────────────────────────────────────────────────────
 # AsyncAPI CLI Tools (npm install -g @asyncapi/cli)
 # ─────────────────────────────────────────────────────────────
 
-# Validate all AsyncAPI specs
+# Validate AsyncAPI specs
 validate:
     @echo "Validating AsyncAPI specs..."
     asyncapi validate docs/asyncapi-producer.yaml
     asyncapi validate docs/asyncapi-consumer.yaml
     @echo "✓ All specs valid"
 
-# Open interactive studio for a spec
-studio spec:
-    asyncapi start studio docs/{{ spec }}.yaml
-
-# Open producer spec in studio
+# Open producer spec in AsyncAPI Studio
 studio-producer:
     asyncapi start studio docs/asyncapi-producer.yaml
 
-# Open consumer spec in studio
+# Open consumer spec in AsyncAPI Studio
 studio-consumer:
     asyncapi start studio docs/asyncapi-consumer.yaml
+
+# Open both specs side-by-side (requires two terminals)
+studio:
+    @echo "Run these in separate terminals:"
+    @echo "  just studio-producer"
+    @echo "  just studio-consumer"
 
 # Generate HTML documentation
 docs-html:
@@ -158,7 +146,6 @@ docs-html:
     asyncapi generate fromTemplate docs/asyncapi-producer.yaml @asyncapi/html-template -o docs/html/producer
     asyncapi generate fromTemplate docs/asyncapi-consumer.yaml @asyncapi/html-template -o docs/html/consumer
     @echo "✓ HTML docs generated in docs/html/"
-    @echo "Open docs/html/producer/index.html or docs/html/consumer/index.html"
 
 # Generate markdown documentation
 docs-md:
@@ -180,10 +167,6 @@ codegen-typescript:
     asyncapi generate models typescript docs/asyncapi-producer.yaml -o generated/typescript/producer
     asyncapi generate models typescript docs/asyncapi-consumer.yaml -o generated/typescript/consumer
     @echo "✓ TypeScript types generated in generated/typescript/"
-
-# Show diff between producer and consumer schemas
-diff-specs:
-    asyncapi diff docs/asyncapi-producer.yaml docs/asyncapi-consumer.yaml
 
 # Bundle specs (resolve all $refs)
 bundle:

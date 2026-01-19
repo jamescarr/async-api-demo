@@ -90,21 +90,21 @@ app = FastStream(broker, specification=spec)
 # Publishers - typed with Pydantic models for AsyncAPI generation
 accepted_publisher = broker.publisher(
     ORDERS_ACCEPTED_TOPIC,
-    title="Order Accepted Publisher",
+    title="OrderAccepted",
     description="Publishes events when orders are validated and accepted",
     schema=OrderAccepted,
 )
 
 shipped_publisher = broker.publisher(
     ORDERS_SHIPPED_TOPIC,
-    title="Order Shipped Publisher", 
+    title="OrderShipped",
     description="Publishes events when orders are shipped",
     schema=OrderShipped,
 )
 
 fulfilled_publisher = broker.publisher(
     ORDERS_FULFILLED_TOPIC,
-    title="Order Fulfilled Publisher",
+    title="OrderFulfilled",
     description="Publishes events when orders complete fulfillment",
     schema=OrderFulfilled,
 )
@@ -125,7 +125,7 @@ def generate_tracking_number(carrier: Carrier) -> str:
 @broker.subscriber(
     ORDERS_CREATED_TOPIC,
     group_id="order-fulfillment-service",
-    title="Order Created Subscriber",
+    title="OrderCreated",
     description="Consumes new order events and initiates fulfillment",
 )
 async def handle_order_created(body: str, msg: KafkaMessage):

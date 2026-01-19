@@ -1,307 +1,166 @@
-!!python/object:faststream.specification.asyncapi.v3_0_0.schema.schema.ApplicationSchema
-__dict__:
-  info: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.info.ApplicationInfo
-    __dict__:
-      title: Order Producer Service
-      version: 1.0.0
-      description: "\n## Order Producer Service\n\nThis service generates order events\
-        \ and publishes them to Kafka.\nIt simulates an e-commerce order intake system.\n\
-        \n### Events Published\n\n- **OrderCreated**: Emitted when a new order is\
-        \ placed\n\n### Architecture\n\n```\n[Order Producer] --> [orders.created\
-        \ topic] --> [Order Consumer]\n                                          \
-        \   |\n                                             --> [Redpanda Connect]\
-        \ --> [SQS]\n```\n"
-      termsOfService: null
-      contact: null
-      license: null
-      tags: null
-      externalDocs: null
-    __pydantic_extra__: {}
-    __pydantic_fields_set__: !!set
-      tags: null
-      termsOfService: null
-      version: null
-      title: null
-      externalDocs: null
-      license: null
-      description: null
-      contact: null
-    __pydantic_private__: null
-  asyncapi: 3.0.0
-  id: null
-  defaultContentType: application/json
-  servers:
-    development: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.servers.Server
-      __dict__:
-        host: localhost:19092
-        pathname: ''
-        protocol: kafka
-        description: null
-        protocolVersion: auto
-        tags: null
-        security: null
-        variables: null
-      __pydantic_extra__: {}
-      __pydantic_fields_set__: !!set
-        tags: null
-        protocolVersion: null
-        protocol: null
-        host: null
-        description: null
-        pathname: null
-      __pydantic_private__: null
-  channels:
-    Order Created Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.channels.Channel
-      __dict__:
-        address: Order Created Publisher
-        description: Publishes new order events to the orders.created topic
-        servers:
-        - $ref: '#/servers/development'
-        messages:
-          Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
-            __dict__:
-              ref: '#/components/messages/Order Created Publisher:Message'
-            __pydantic_extra__: null
-            __pydantic_fields_set__: !!set
-              ref: null
-            __pydantic_private__: null
-        bindings: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.bindings.main.channel.ChannelBinding
-          __dict__:
-            amqp: null
-            kafka: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.bindings.kafka.channel.ChannelBinding
-              __dict__:
-                topic: orders.created
-                partitions: null
-                replicas: null
-                bindingVersion: 0.4.0
-              __pydantic_extra__: null
-              __pydantic_fields_set__: !!set
-                replicas: null
-                topic: null
-                partitions: null
-              __pydantic_private__: null
-            sqs: null
-            nats: null
-            redis: null
-          __pydantic_extra__: {}
-          __pydantic_fields_set__: !!set
-            kafka: null
-          __pydantic_private__: null
-      __pydantic_extra__: {}
-      __pydantic_fields_set__: !!set
-        messages: null
-        bindings: null
-        address: null
-        servers: null
-        description: null
-      __pydantic_private__: null
-  operations:
-    Order Created Publisher: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.operations.Operation
-      __dict__:
-        action: !!python/object/apply:faststream.specification.asyncapi.v3_0_0.schema.operations.Action
-        - send
-        channel: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
-          __dict__:
-            ref: '#/channels/Order Created Publisher'
-          __pydantic_extra__: null
-          __pydantic_fields_set__: !!set
-            ref: null
-          __pydantic_private__: null
-        summary: null
-        description: null
-        bindings: null
-        messages:
-        - !!python/object:faststream.specification.asyncapi.v2_6_0.schema.utils.Reference
-          __dict__:
-            ref: '#/channels/Order Created Publisher/messages/Message'
-          __pydantic_extra__: null
-          __pydantic_fields_set__: !!set
-            ref: null
-          __pydantic_private__: null
-        security: null
-        tags: null
-      __pydantic_extra__: {}
-      __pydantic_fields_set__: !!set
-        tags: null
-        channel: null
-        action: null
-        bindings: null
-        messages: null
-        summary: null
-        description: null
-        security: null
-      __pydantic_private__: null
-  components: !!python/object:faststream.specification.asyncapi.v3_0_0.schema.components.Components
-    __dict__:
-      messages:
-        Order Created Publisher:Message: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.Message
-          __dict__:
-            title: Order Created Publisher:Message
-            name: null
-            summary: null
-            description: null
-            messageId: null
-            correlationId: !!python/object:faststream.specification.asyncapi.v2_6_0.schema.message.CorrelationId
-              __dict__:
-                location: $message.header#/correlation_id
-                description: null
-              __pydantic_extra__: {}
-              __pydantic_fields_set__: !!set
-                location: null
-                description: null
-              __pydantic_private__: null
-            contentType: null
-            payload:
-              $ref: '#/components/schemas/OrderCreated'
-            tags: null
-          __pydantic_extra__: {}
-          __pydantic_fields_set__: !!set
-            tags: null
-            name: null
-            messageId: null
-            title: null
-            payload: null
-            summary: null
-            description: null
-            correlationId: null
-            contentType: null
-          __pydantic_private__: null
-      schemas:
-        Address:
-          description: Shipping or billing address.
-          properties:
-            street:
-              title: Street
-              type: string
-            city:
-              title: City
-              type: string
-            state:
-              title: State
-              type: string
-            zip_code:
-              title: Zip Code
-              type: string
-            country:
-              default: USA
-              title: Country
-              type: string
-          required:
-          - street
-          - city
-          - state
-          - zip_code
-          title: Address
+info:
+  title: Order Producer Service
+  version: 1.0.0
+  description: "\n## Order Producer Service\n\nThis service generates order events\
+    \ and publishes them to Kafka.\nIt simulates an e-commerce order intake system.\n\
+    \n### Events Published\n\n- **OrderCreated**: Emitted when a new order is placed\n\
+    \n### Architecture\n\n```\n[Order Producer] --> [orders.created topic] --> [Order\
+    \ Consumer]\n                                             |\n                \
+    \                             --> [Redpanda Connect] --> [SQS]\n```\n"
+asyncapi: 3.0.0
+defaultContentType: application/json
+servers:
+  development:
+    host: localhost:19092
+    pathname: ''
+    protocol: kafka
+    protocolVersion: auto
+channels:
+  OrderCreated:
+    address: OrderCreated
+    description: Publishes new order events to the orders.created topic
+    servers:
+    - $ref: '#/servers/development'
+    messages:
+      Message:
+        $ref: '#/components/messages/OrderCreated:Message'
+    bindings:
+      kafka:
+        topic: orders.created
+        bindingVersion: 0.4.0
+operations:
+  OrderCreated:
+    action: send
+    channel:
+      $ref: '#/channels/OrderCreated'
+    messages:
+    - $ref: '#/channels/OrderCreated/messages/Message'
+components:
+  messages:
+    OrderCreated:Message:
+      title: OrderCreated:Message
+      correlationId:
+        location: $message.header#/correlation_id
+      payload:
+        $ref: '#/components/schemas/OrderCreated'
+  schemas:
+    Address:
+      description: Shipping or billing address.
+      properties:
+        street:
+          title: Street
+          type: string
+        city:
+          title: City
+          type: string
+        state:
+          title: State
+          type: string
+        zip_code:
+          title: Zip Code
+          type: string
+        country:
+          default: USA
+          title: Country
+          type: string
+      required:
+      - street
+      - city
+      - state
+      - zip_code
+      title: Address
+      type: object
+    OrderItem:
+      description: Individual item in an order.
+      properties:
+        product_id:
+          title: Product Id
+          type: string
+        product_name:
+          title: Product Name
+          type: string
+        quantity:
+          exclusiveMinimum: 0
+          title: Quantity
+          type: integer
+        unit_price:
+          anyOf:
+          - type: number
+          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+            type: string
+          title: Unit Price
+      required:
+      - product_id
+      - product_name
+      - quantity
+      - unit_price
+      title: OrderItem
+      type: object
+    OrderCreated:
+      description: 'Event published when a new order is created.
+
+
+        This is the initiating event in the order fulfillment saga.
+
+        It triggers downstream processes like inventory reservation,
+
+        payment processing, and shipping preparation.'
+      examples:
+      - customer_email: customer@example.com
+        customer_id: cust_67890
+        items:
+        - product_id: prod_001
+          product_name: Wireless Headphones
+          quantity: 1
+          unit_price: '79.99'
+        metadata:
+          campaign: holiday_sale
+          source: web
+        order_id: ord_12345
+        shipping_address:
+          city: Austin
+          country: USA
+          state: TX
+          street: 123 Main St
+          zip_code: '78701'
+        total_amount: '79.99'
+      properties:
+        order_id:
+          title: Order Id
+          type: string
+        customer_id:
+          title: Customer Id
+          type: string
+        customer_email:
+          title: Customer Email
+          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          title: Items
+          type: array
+        total_amount:
+          anyOf:
+          - type: number
+          - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+            type: string
+          title: Total Amount
+        shipping_address:
+          $ref: '#/components/schemas/Address'
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        metadata:
+          additionalProperties:
+            type: string
+          title: Metadata
           type: object
-        OrderItem:
-          description: Individual item in an order.
-          properties:
-            product_id:
-              title: Product Id
-              type: string
-            product_name:
-              title: Product Name
-              type: string
-            quantity:
-              exclusiveMinimum: 0
-              title: Quantity
-              type: integer
-            unit_price:
-              anyOf:
-              - type: number
-              - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
-                type: string
-              title: Unit Price
-          required:
-          - product_id
-          - product_name
-          - quantity
-          - unit_price
-          title: OrderItem
-          type: object
-        OrderCreated:
-          description: 'Event published when a new order is created.
-
-
-            This is the initiating event in the order fulfillment saga.
-
-            It triggers downstream processes like inventory reservation,
-
-            payment processing, and shipping preparation.'
-          examples:
-          - customer_email: customer@example.com
-            customer_id: cust_67890
-            items:
-            - product_id: prod_001
-              product_name: Wireless Headphones
-              quantity: 1
-              unit_price: '79.99'
-            metadata:
-              campaign: holiday_sale
-              source: web
-            order_id: ord_12345
-            shipping_address:
-              city: Austin
-              country: USA
-              state: TX
-              street: 123 Main St
-              zip_code: '78701'
-            total_amount: '79.99'
-          properties:
-            order_id:
-              title: Order Id
-              type: string
-            customer_id:
-              title: Customer Id
-              type: string
-            customer_email:
-              title: Customer Email
-              type: string
-            items:
-              items:
-                $ref: '#/components/schemas/OrderItem'
-              title: Items
-              type: array
-            total_amount:
-              anyOf:
-              - type: number
-              - pattern: ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
-                type: string
-              title: Total Amount
-            shipping_address:
-              $ref: '#/components/schemas/Address'
-            created_at:
-              format: date-time
-              title: Created At
-              type: string
-            metadata:
-              additionalProperties:
-                type: string
-              title: Metadata
-              type: object
-          required:
-          - customer_id
-          - customer_email
-          - items
-          - total_amount
-          - shipping_address
-          title: OrderCreated
-          type: object
-      securitySchemes: null
-    __pydantic_extra__: {}
-    __pydantic_fields_set__: !!set
-      schemas: null
-      securitySchemes: null
-      messages: null
-    __pydantic_private__: null
-__pydantic_extra__: null
-__pydantic_fields_set__: !!set
-  operations: null
-  asyncapi: null
-  defaultContentType: null
-  channels: null
-  servers: null
-  info: null
-  id: null
-  components: null
-__pydantic_private__: null
+      required:
+      - customer_id
+      - customer_email
+      - items
+      - total_amount
+      - shipping_address
+      title: OrderCreated
+      type: object

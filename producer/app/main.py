@@ -70,9 +70,9 @@ app = FastStream(broker, specification=spec)
 # Publisher for order events - typed with Pydantic model for AsyncAPI generation
 publisher = broker.publisher(
     ORDERS_TOPIC,
-    title="Order Created Publisher",
+    title="OrderCreated",
     description="Publishes new order events to the orders.created topic",
-    schema=OrderCreated,  # This drives AsyncAPI schema generation
+    schema=OrderCreated,
 )
 
 

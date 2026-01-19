@@ -28,13 +28,15 @@ def asyncapi(output_yaml: bool, output: str | None):
     """Generate AsyncAPI specification."""
     from .main import app
 
-    # Get the schema as a jsonable dict (FastStream 0.6+)
+    # Get the schema and convert to plain dict via JSON round-trip
+    # This ensures no Python objects leak into the YAML output
     schema = app.schema.to_specification()
+    schema_dict = json.loads(json.dumps(schema, default=str))
 
     if output_yaml:
-        content = yaml.dump(schema, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        content = yaml.safe_dump(schema_dict, default_flow_style=False, sort_keys=False, allow_unicode=True)
     else:
-        content = json.dumps(schema, indent=2)
+        content = json.dumps(schema_dict, indent=2)
 
     if output:
         with open(output, "w") as f:
